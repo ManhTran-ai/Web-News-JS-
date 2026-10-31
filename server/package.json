@@ -1,0 +1,41 @@
+{
+  "name": "@news24h/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "oxlint",
+    "verify:feeds": "tsx src/scripts/verify-feeds.ts",
+    "verify:content": "tsx src/scripts/verify-content.ts"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.2",
+    "helmet": "^8.3.0",
+    "html-entities": "^2.6.0",
+    "jsdom": "^30.1.3",
+    "node-cache": "^5.1.2",
+    "node-cron": "^4.6.0",
+    "rss-parser": "^3.13.0",
+    "sanitize-html": "^2.18.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^24.19.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/sanitize-html": "^2.16.2",
+    "oxlint": "^1.89.0",
+    "tsx": "^4.23.15",
+    "typescript": "~7.0.2"
+  }
+}
