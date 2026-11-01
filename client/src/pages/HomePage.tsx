@@ -6,14 +6,15 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Loading } from '@/components/common/Loading';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchLatest } from '@/store/slices/articlesSlice';
-import { selectListArticles, selectListEntry } from '@/store/slices/articlesSlice';
+import { selectListEntry } from '@/store/slices/articlesSlice';
+import { useListArticles } from '@/hooks/useListArticles';
 import { usePolling } from '@/hooks/usePolling';
 import { PAGE_SIZE, POLLING_INTERVAL_MS } from '@/lib/constants';
 
 export function HomePage() {
   const dispatch = useAppDispatch();
   const entry = useAppSelector((state) => selectListEntry(state, 'latest'));
-  const articles = useAppSelector((state) => selectListArticles(state, 'latest'));
+  const articles = useListArticles('latest');
 
   const load = useCallback(() => {
     void dispatch(fetchLatest(PAGE_SIZE));

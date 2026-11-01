@@ -8,7 +8,7 @@ import { apiRouter } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.js';
 
 const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const clientDist = resolve(serverRoot, '..', 'client', 'dist');
+const clientDist = resolve(serverRoot, 'client', 'dist');
 
 export function createApp() {
   const app = express();

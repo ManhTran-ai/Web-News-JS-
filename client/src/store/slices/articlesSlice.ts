@@ -172,16 +172,17 @@ const articlesSlice = createSlice({
 export const articlesReducer = articlesSlice.reducer;
 export const { clearList } = articlesSlice.actions;
 
+const selectArticlesEntities = (state: RootState) => state.articles.entities;
+
 export const selectListEntry = (state: RootState, key: string): ListEntry =>
   state.articles.lists[key] ?? emptyEntry;
 
-export const selectListArticles = (state: RootState, key: string): Article[] => {
-  const entry = state.articles.lists[key];
-  if (!entry) return [];
-  return entry.ids
-    .map((id) => state.articles.entities[id])
-    .filter((article): article is Article => article !== undefined);
-};
+export const EMPTY_IDS: string[] = [];
+
+export const selectListIds = (state: RootState, key: string): string[] =>
+  state.articles.lists[key]?.ids ?? EMPTY_IDS;
 
 export const selectArticleById = (state: RootState, id: string): Article | undefined =>
   state.articles.entities[id];
+
+export { selectArticlesEntities };

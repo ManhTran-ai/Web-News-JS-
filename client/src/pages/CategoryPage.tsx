@@ -6,7 +6,8 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Loading } from '@/components/common/Loading';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchByCategory, selectListArticles, selectListEntry } from '@/store/slices/articlesSlice';
+import { fetchByCategory, selectListEntry } from '@/store/slices/articlesSlice';
+import { useListArticles } from '@/hooks/useListArticles';
 import { PAGE_SIZE } from '@/lib/constants';
 
 export function CategoryPage() {
@@ -14,7 +15,7 @@ export function CategoryPage() {
   const dispatch = useAppDispatch();
   const key = `category:${slug}`;
   const entry = useAppSelector((state) => selectListEntry(state, key));
-  const articles = useAppSelector((state) => selectListArticles(state, key));
+  const articles = useListArticles(key);
 
   const load = useCallback(() => {
     void dispatch(fetchByCategory({ category: slug, limit: PAGE_SIZE }));
