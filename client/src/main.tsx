@@ -1,10 +1,25 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { RouterProvider } from 'react-router-dom';
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/500.css';
+import '@fontsource/be-vietnam-pro/700.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import '@/styles/main.scss';
+import { store } from '@/store';
+import { router } from '@/router';
 
-createRoot(document.getElementById('root')!).render(
+const container = document.getElementById('root');
+
+if (!container) {
+  throw new Error('Không tìm thấy phần tử #root trong index.html');
+}
+
+createRoot(container).render(
   <StrictMode>
-    <App />
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </StrictMode>,
-)
+);
