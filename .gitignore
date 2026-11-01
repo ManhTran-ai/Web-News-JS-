@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Env
+.env
+.env.*
+!.env.example
+
+# Dữ liệu runtime của server (snapshot dự phòng, tự sinh khi chạy - KHÔNG commit)
+/server/data/
+/data/
+
+# Coverage
+coverage
+*.log
+.vite
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +36,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cursor local config
+.cursor/
