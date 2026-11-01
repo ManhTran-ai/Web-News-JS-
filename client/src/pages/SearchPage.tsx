@@ -6,7 +6,8 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Loading } from '@/components/common/Loading';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { searchArticles, selectListArticles, selectListEntry } from '@/store/slices/articlesSlice';
+import { searchArticles, selectListEntry } from '@/store/slices/articlesSlice';
+import { useListArticles } from '@/hooks/useListArticles';
 import { PAGE_SIZE } from '@/lib/constants';
 
 export function SearchPage() {
@@ -15,7 +16,7 @@ export function SearchPage() {
   const dispatch = useAppDispatch();
   const key = `search:${keyword}`;
   const entry = useAppSelector((state) => selectListEntry(state, key));
-  const articles = useAppSelector((state) => selectListArticles(state, key));
+  const articles = useListArticles(key);
 
   const load = useCallback(() => {
     if (!keyword) return;
