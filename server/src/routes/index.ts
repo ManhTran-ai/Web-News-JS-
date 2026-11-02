@@ -19,6 +19,8 @@ const listQuerySchema = z.object({
   category: z.string().optional(),
   source: z.string().optional(),
   q: z.string().optional(),
+  since: z.string().datetime({ offset: true }).optional(),
+  until: z.string().datetime({ offset: true }).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
