@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { createHash } from 'node:crypto';
 import { articleStore } from '../services/article.store.js';
 import { getContent } from '../services/content.service.js';
 import { getLastRefreshAt, getSourceStatuses } from '../services/refresh.service.js';
@@ -18,6 +19,22 @@ function requireArticle(id: string): Article {
 function paramId(req: Request): string {
   const raw = req.params.id;
   return Array.isArray(raw) ? (raw[0] ?? '') : (raw ?? '');
+}
+
+function sendCachedJson(res: Response, payload: unknown, maxAgeSeconds: number): void {
+  const body = JSON.stringify(payload);
+  const etag = `W/"${createHash('sha1').update(body).digest('base64url').slice(0, 20)}"`;
+
+  res.setHeader('ETag', etag);
+  res.setHeader('Cache-Control', `public, max-age=${maxAgeSeconds}`);
+
+  if (res.req.headers['if-none-match'] === etag) {
+    res.status(304).end();
+    return;
+  }
+
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.send(body);
 }
 
 export function healthController(_req: Request, res: Response): void {
@@ -64,38 +81,44 @@ export function listArticlesController(req: Request, res: Response): void {
     category?: string;
     source?: string;
     q?: string;
+    since?: string;
+    until?: string;
     page: number;
     limit: number;
   };
   const result = articleStore.query(query);
-  res.json({ data: result.items, meta: result.meta });
+  sendCachedJson(res, { data: result.items, meta: result.meta }, 30);
 }
 
 export function latestController(req: Request, res: Response): void {
   const query = res.locals.parsedQuery as { page: number; limit: number };
   const result = articleStore.query({ page: query.page, limit: query.limit });
-  res.json({ data: result.items, meta: result.meta });
+  sendCachedJson(res, { data: result.items, meta: result.meta }, 30);
 }
 
 export function featuredController(req: Request, res: Response): void {
   const query = res.locals.parsedQuery as { limit: number };
   const items = articleStore.featured(query.limit);
-  res.json({
-    data: items,
-    meta: {
-      page: 1,
-      limit: query.limit,
-      total: items.length,
-      totalPages: 1,
-      updatedAt: articleStore.updatedAt,
+  sendCachedJson(
+    res,
+    {
+      data: items,
+      meta: {
+        page: 1,
+        limit: query.limit,
+        total: items.length,
+        totalPages: 1,
+        updatedAt: articleStore.updatedAt,
+      },
     },
-  });
+    60,
+  );
 }
 
 export function searchController(req: Request, res: Response): void {
   const query = res.locals.parsedQuery as { q: string; page: number; limit: number };
   const result = articleStore.query(query);
-  res.json({ data: result.items, meta: result.meta });
+  sendCachedJson(res, { data: result.items, meta: result.meta }, 30);
 }
 
 export function getArticleController(req: Request, res: Response): void {
