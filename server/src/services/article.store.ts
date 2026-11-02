@@ -11,6 +11,8 @@ export interface QueryOptions {
   category?: string;
   source?: string;
   q?: string;
+  since?: string;
+  until?: string;
   page: number;
   limit: number;
 }
@@ -106,7 +108,7 @@ export class ArticleStore {
   }
 
   query(options: QueryOptions): QueryResult {
-    const { category, source, q, page, limit } = options;
+    const { category, source, q, since, until, page, limit } = options;
 
     let filtered = [...this.articles.values()];
 
@@ -116,6 +118,15 @@ export class ArticleStore {
     if (source) {
       filtered = filtered.filter((a) => a.sourceId === source);
     }
+    if (since) {
+      const from = new Date(since).getTime();
+      filtered = filtered.filter((a) => new Date(a.publishedAt).getTime() >= from);
+    }
+    if (until) {
+      const to = new Date(until).getTime();
+      filtered = filtered.filter((a) => new Date(a.publishedAt).getTime() <= to);
+    }
+
     if (q) {
       const needle = toSearchText(q);
       filtered = needle ? filtered.filter((a) => a.searchText.includes(needle)) : filtered;
