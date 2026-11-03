@@ -127,12 +127,14 @@ export class ArticleStore {
       filtered = filtered.filter((a) => new Date(a.publishedAt).getTime() <= to);
     }
 
-    if (q) {
-      const needle = toSearchText(q);
-      filtered = needle ? filtered.filter((a) => a.searchText.includes(needle)) : filtered;
-    }
+    const needle = q ? toSearchText(q) : '';
 
-    filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    if (needle) {
+      filtered = filtered.filter((a) => a.searchText.includes(needle));
+      filtered = this.sortByRelevance(filtered, needle);
+    } else {
+      filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    }
 
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -150,6 +152,40 @@ export class ArticleStore {
         updatedAt: this.lastUpdatedAt,
       },
     };
+  }
+
+  private sortByRelevance(articles: StoredArticle[], needle: string): StoredArticle[] {
+    const terms = needle.split(' ').filter(Boolean);
+    const now = Date.now();
+
+    const scored = articles.map((article) => {
+      const title = toSearchText(article.title);
+      const summary = toSearchText(article.summary);
+      const source = toSearchText(article.source);
+
+      let score = 0;
+      for (const term of terms) {
+        if (title.includes(term)) score += 10;
+        if (title.startsWith(term)) score += 6;
+        if (title === term) score += 8;
+        if (summary.includes(term)) score += 3;
+        if (source.includes(term)) score += 1;
+      }
+
+      const ageHours = (now - new Date(article.publishedAt).getTime()) / 3600_000;
+      score += Math.max(0, 3 - ageHours / 24);
+
+      return { article, score };
+    });
+
+    return scored
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (
+          new Date(b.article.publishedAt).getTime() - new Date(a.article.publishedAt).getTime()
+        );
+      })
+      .map((item) => item.article);
   }
 
   latest(limit: number): Article[] {
