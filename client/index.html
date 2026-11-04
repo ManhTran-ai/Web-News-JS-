@@ -9,6 +9,21 @@
       content="Tin tức 24h - tổng hợp tin tức thời sự, thế giới, kinh doanh, giải trí, thể thao từ các báo uy tín, cập nhật liên tục."
     />
     <title>Tin tức 24h</title>
+    <script>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem('news24h:theme');
+          var mode = stored ? JSON.parse(stored) : 'system';
+          var dark =
+            mode === 'dark' ||
+            ((mode === 'system' || !mode) &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.setAttribute('data-bs-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

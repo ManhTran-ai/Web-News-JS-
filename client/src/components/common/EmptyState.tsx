@@ -8,10 +8,9 @@ export function EmptyState({
   description = 'Hiện chưa có bài viết nào để hiển thị trong mục này.',
 }: EmptyStateProps) {
   return (
-    <div className="d-flex flex-column align-items-center justify-content-center py-5 text-secondary">
-      <i className="bi bi-inbox fs-1 mb-3" />
-      <h2 className="h5">{title}</h2>
-      <p className="mb-0">{description}</p>
+    <div className="n24-surface">
+      <h3 className="article-card__title mb-2">{title}</h3>
+      <p className="article-card__summary mb-0">{description}</p>
     </div>
   );
 }
