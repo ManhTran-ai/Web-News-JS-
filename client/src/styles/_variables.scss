@@ -1,35 +1,87 @@
-$primary: #c62828;
-$secondary: #37474f;
-$danger: #d32f2f;
-$success: #2e7d32;
-$warning: #ef6c00;
-$info: #0277bd;
-$light: #f5f5f5;
-$dark: #212121;
+// Biến Sass của Bootstrap 5 — nguồn token cho client/src/styles/_custom.scss
+// Nguồn sự thật thiết kế: docs/DESIGN.md. Đổi ở đây thì cập nhật cả DESIGN.md.
 
-$body-bg: #ffffff;
-$body-color: #212121;
+$n24-ink: #1a1714;
+$n24-ink-muted: #55504c;
+$n24-ink-faint: #6e6862;
+$n24-accent: #c62828;
+$n24-accent-soft: #fdecec;
+$n24-link: #b3261e;
+
+$n24-paper: #f6f5f4;
+$n24-surface: #ffffff;
+$n24-raised: #efedec;
+$n24-border: #e3e1e0;
+
+$primary: $n24-accent;
+$secondary: $n24-ink-muted;
+$danger: #b3261e;
+$success: #1b6b3a;
+$warning: #8a5a00;
+$info: #2b6a8f;
+$light: $n24-raised;
+$dark: $n24-ink;
+
+$body-bg: $n24-paper;
+$body-color: $n24-ink;
 
 $font-family-sans-serif: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 $font-size-base: 1rem;
 $line-height-base: 1.6;
 
 $headings-font-weight: 700;
-$headings-color: #111111;
+$headings-line-height: 1.25;
+$headings-color: $n24-ink;
 
-$border-radius: 0.375rem;
-$border-radius-sm: 0.25rem;
+$border-radius: 0.5rem;
+$border-radius-sm: 0.375rem;
 $border-radius-lg: 0.5rem;
+$border-radius-xl: 0.5rem;
+$border-radius-pill: 999px;
 
-$card-border-color: #e3e3e3;
-$card-cap-bg: #ffffff;
+$card-border-color: $n24-border;
+$card-border-width: 1px;
+$card-cap-bg: $n24-surface;
+$card-bg: $n24-surface;
+$card-spacer-y: 1rem;
+$card-spacer-x: 1rem;
 
-$link-color: $primary;
-$link-hover-color: darken($primary, 8%);
+$link-color: $n24-link;
+$link-hover-color: darken($n24-link, 8%);
 
-$navbar-dark-color: rgba(#ffffff, 0.75);
-$navbar-dark-hover-color: #ffffff;
-$navbar-dark-active-color: #ffffff;
+$navbar-padding-y: 0.75rem;
+$navbar-light-color: $n24-ink-muted;
+$navbar-light-hover-color: $n24-ink;
+$navbar-light-active-color: $n24-accent;
+
+$input-bg: $n24-surface;
+$input-border-color: $n24-border;
+$input-focus-border-color: $n24-accent;
+$input-focus-box-shadow: 0 0 0 0.2rem rgba($n24-accent, 0.16);
+
+$btn-border-radius: 0.375rem;
+$btn-font-weight: 600;
 
 $enable-shadows: false;
 $enable-gradients: false;
+
+$spacer: 1rem;
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer * 0.75,
+  4: $spacer,
+  5: $spacer * 1.5,
+  6: $spacer * 2,
+  7: $spacer * 3,
+  8: $spacer * 4,
+);
+
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1200px,
+  xxl: 1320px,
+);
