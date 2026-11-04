@@ -1,14 +1,12 @@
-import { Spinner } from 'react-bootstrap';
-
 interface LoadingProps {
   label?: string;
 }
 
 export function Loading({ label = 'Đang tải dữ liệu...' }: LoadingProps) {
   return (
-    <div className="d-flex flex-column align-items-center justify-content-center py-5 text-secondary">
-      <Spinner animation="border" variant="danger" role="status" />
-      <p className="mt-3 mb-0">{label}</p>
+    <div className="d-flex align-items-center gap-2 py-4" role="status" aria-live="polite">
+      <span className="spinner-border spinner-border-sm" aria-hidden="true" />
+      <span className="article-meta">{label}</span>
     </div>
   );
 }
