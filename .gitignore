@@ -39,3 +39,6 @@ coverage
 
 # Cursor local config
 .cursor/
+
+# Working files c?a taste-skill
+.taste-skill/
