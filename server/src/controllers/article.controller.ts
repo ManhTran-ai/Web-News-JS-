@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { createHash } from 'node:crypto';
 import { articleStore } from '../services/article.store.js';
 import { getContent } from '../services/content.service.js';
-import { getLastRefreshAt, getSourceStatuses } from '../services/refresh.service.js';
+import { getLastRefreshAt, getSourceStatuses, refreshAll } from '../services/refresh.service.js';
 import { SOURCES } from '../config/sources.js';
 import { CATEGORY_NAMES } from '../config/categories.js';
 import { ApiError } from '../middlewares/error.js';
@@ -45,6 +45,11 @@ export function healthController(_req: Request, res: Response): void {
     articleCount: articleStore.size,
     sources: getSourceStatuses(),
   });
+}
+
+export async function refreshController(_req: Request, res: Response): Promise<void> {
+  const summary = await refreshAll();
+  res.json({ data: summary });
 }
 
 export function categoriesController(_req: Request, res: Response): void {
