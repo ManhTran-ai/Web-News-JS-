@@ -9,6 +9,7 @@ import {
   healthController,
   latestController,
   listArticlesController,
+  refreshController,
   relatedController,
   searchController,
   sourcesController,
@@ -65,6 +66,7 @@ apiRouter.use(apiLimiter);
 apiRouter.get('/health', healthController);
 apiRouter.get('/categories', categoriesController);
 apiRouter.get('/sources', sourcesController);
+apiRouter.post('/refresh', refreshController);
 
 apiRouter.get('/articles/latest', validateQuery(latestQuerySchema), latestController);
 apiRouter.get('/articles/featured', validateQuery(featuredQuerySchema), featuredController);
