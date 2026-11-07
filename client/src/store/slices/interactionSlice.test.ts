@@ -5,12 +5,14 @@ import {
   interactionReducer,
   recordRead,
   clearReadingHistory,
+  removeReadingHistoryItem,
   addComment,
   removeComment,
   setCommentLiked,
   selectReadingHistory,
   selectCommentsByArticle,
 } from './interactionSlice';
+import { MAX_READING_HISTORY } from '@/lib/constants';
 import type { Article, Comment } from '@/types/article';
 
 const article: Article = {
@@ -116,5 +118,27 @@ describe('interactionSlice', () => {
     store.dispatch(removeComment({ articleId: 'a2', commentId: 'c1' }));
 
     expect(selectCommentsByArticle(store.getState(), 'a1')).toHaveLength(1);
+  });
+
+  it('giới hạn lịch sử đọc ở mức tối đa', () => {
+    const store = makeStore();
+
+    for (let index = 0; index < MAX_READING_HISTORY + 10; index += 1) {
+      store.dispatch(recordRead({ ...article, id: `a${index}` }));
+    }
+
+    expect(selectReadingHistory(store.getState())).toHaveLength(MAX_READING_HISTORY);
+  });
+
+  it('xoá một mục khỏi lịch sử đọc', () => {
+    const store = makeStore();
+
+    store.dispatch(recordRead(article));
+    store.dispatch(recordRead({ ...article, id: 'a2' }));
+    store.dispatch(removeReadingHistoryItem('a1'));
+
+    const history = selectReadingHistory(store.getState());
+    expect(history).toHaveLength(1);
+    expect(history[0]?.article.id).toBe('a2');
   });
 });
