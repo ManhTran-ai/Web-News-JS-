@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { CATEGORY_FALLBACK } from '@/lib/constants';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { AuthModal } from '@/components/common/AuthModal';
+import { logout, selectCurrentUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import type { Category } from '@/types/article';
 
 export function AppNavbar() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const categories = useAppSelector((state) => state.categories.items);
+  const user = useAppSelector(selectCurrentUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [keyword, setKeyword] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const menu: Category[] = categories.length > 0 ? categories : [...CATEGORY_FALLBACK];
 
@@ -47,6 +53,28 @@ export function AppNavbar() {
                 <i className="bi bi-bookmark" aria-hidden="true" />
                 <span>Đã lưu</span>
               </Link>
+
+              {isAuthenticated && user ? (
+                <div className="app-navbar__user">
+                  <span className="app-navbar__user-name">{user.fullName}</span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-dark"
+                    onClick={() => dispatch(logout())}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-dark"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Đăng nhập
+                </button>
+              )}
+
               <ThemeToggle />
             </div>
           </div>
@@ -71,6 +99,8 @@ export function AppNavbar() {
           </ul>
         </div>
       </nav>
+
+      <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </header>
   );
 }

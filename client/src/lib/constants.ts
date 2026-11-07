@@ -3,6 +3,7 @@ import type { Category } from '@/types/article';
 export const STORAGE_KEYS = {
   bookmarks: 'news24h:bookmarks',
   auth: 'news24h:auth',
+  accounts: 'news24h:accounts',
   readingHistory: 'news24h:reading-history',
   comments: 'news24h:comments',
   theme: 'news24h:theme',
