@@ -13,6 +13,9 @@ export const PAGE_SIZE = 20;
 /** Số nội dung bài viết tối đa được giữ trong RAM của Redux. */
 export const MAX_CACHED_CONTENTS = 50;
 
+/** Số bài gần nhất giữ trong lịch sử đọc. */
+export const MAX_READING_HISTORY = 50;
+
 export const POLLING_INTERVAL_MS = 60000;
 
 export const DEFAULT_SOURCES = [

@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { STORAGE_KEYS } from '@/lib/constants';
+import { MAX_READING_HISTORY, STORAGE_KEYS } from '@/lib/constants';
 import { readStorage, writeStorage } from '@/lib/storage';
 import type { Article, Comment } from '@/types/article';
 
@@ -26,10 +26,19 @@ const interactionSlice = createSlice({
       const article = action.payload;
       state.readingHistory = state.readingHistory.filter((item) => item.article.id !== article.id);
       state.readingHistory.unshift({ article, readAt: new Date().toISOString() });
+      if (state.readingHistory.length > MAX_READING_HISTORY) {
+        state.readingHistory = state.readingHistory.slice(0, MAX_READING_HISTORY);
+      }
       writeStorage(STORAGE_KEYS.readingHistory, state.readingHistory);
     },
     clearReadingHistory(state) {
       state.readingHistory = [];
+      writeStorage(STORAGE_KEYS.readingHistory, state.readingHistory);
+    },
+    removeReadingHistoryItem(state, action: { payload: string }) {
+      state.readingHistory = state.readingHistory.filter(
+        (item) => item.article.id !== action.payload,
+      );
       writeStorage(STORAGE_KEYS.readingHistory, state.readingHistory);
     },
     addComment(state, action: { payload: Comment }) {
@@ -64,6 +73,7 @@ export const interactionReducer = interactionSlice.reducer;
 export const {
   recordRead,
   clearReadingHistory,
+  removeReadingHistoryItem,
   addComment,
   removeComment,
   setCommentLiked,
