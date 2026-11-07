@@ -21,6 +21,19 @@ function paramId(req: Request): string {
   return Array.isArray(raw) ? (raw[0] ?? '') : (raw ?? '');
 }
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function cdata(value: string): string {
+  return `<![CDATA[${value.replace(/]]>/g, ']]&gt;')}]]>`;
+}
+
 function sendCachedJson(res: Response, payload: unknown, maxAgeSeconds: number): void {
   const body = JSON.stringify(payload);
   const etag = `W/"${createHash('sha1').update(body).digest('base64url').slice(0, 20)}"`;
@@ -134,6 +147,7 @@ export function getArticleController(req: Request, res: Response): void {
 export function relatedController(req: Request, res: Response): void {
   const query = res.locals.parsedQuery as { limit: number };
   const id = paramId(req);
+  requireArticle(id);
   const items = articleStore.related(id, query.limit);
   res.json({
     data: items,
@@ -151,4 +165,49 @@ export async function contentController(req: Request, res: Response): Promise<vo
   const article = requireArticle(paramId(req));
   const content = await getContent(article);
   res.json({ data: content });
+}
+
+export function rssController(req: Request, res: Response): void {
+  const query = res.locals.parsedQuery as { limit: number; category?: string };
+  const items = articleStore.query({
+    page: 1,
+    limit: query.limit,
+    category: query.category,
+  }).items;
+
+  const baseUrl = `${req.protocol}://${req.get('host') ?? 'localhost'}`;
+  const itemsXml = items
+    .map((article) => {
+      const link = `${baseUrl}/bai-viet/${article.id}`;
+      const category = CATEGORY_NAMES[article.category] ?? article.category;
+      return [
+        '    <item>',
+        `      <title>${escapeXml(article.title)}</title>`,
+        `      <link>${escapeXml(link)}</link>`,
+        `      <guid isPermaLink="false">${escapeXml(article.id)}</guid>`,
+        `      <pubDate>${new Date(article.publishedAt).toUTCString()}</pubDate>`,
+        `      <category>${escapeXml(category)}</category>`,
+        `      <source url="${escapeXml(article.link)}">${escapeXml(article.source)}</source>`,
+        `      <description>${cdata(article.summary)}</description>`,
+        '    </item>',
+      ].join('\n');
+    })
+    .join('\n');
+
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0">',
+    '  <channel>',
+    '    <title>Tin tức 24h</title>',
+    `    <link>${escapeXml(baseUrl)}</link>`,
+    '    <description>Tổng hợp tin tức từ VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, VietnamNet</description>',
+    '    <language>vi</language>',
+    `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
+    itemsXml,
+    '  </channel>',
+    '</rss>',
+  ].join('\n');
+
+  res.set('Content-Type', 'application/rss+xml; charset=utf-8');
+  res.send(xml);
 }
