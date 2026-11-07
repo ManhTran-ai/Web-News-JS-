@@ -21,8 +21,10 @@ export function CategoryLayout() {
                   as={NavLink}
                   to={`/chuyen-muc/${category.slug}`}
                   className="px-0 py-1 border-bottom"
+                  end
                 >
                   {category.name}
+                  <span className="category-nav__count">{category.count}</span>
                 </Nav.Link>
               ))}
             </Nav>
