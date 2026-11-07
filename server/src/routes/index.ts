@@ -11,6 +11,7 @@ import {
   listArticlesController,
   refreshController,
   relatedController,
+  rssController,
   searchController,
   sourcesController,
 } from '../controllers/article.controller.js';
@@ -33,6 +34,11 @@ const latestQuerySchema = z.object({
 
 const featuredQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+const rssQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  category: z.string().optional(),
 });
 
 const relatedQuerySchema = z.object({
@@ -70,6 +76,7 @@ apiRouter.post('/refresh', refreshController);
 
 apiRouter.get('/articles/latest', validateQuery(latestQuerySchema), latestController);
 apiRouter.get('/articles/featured', validateQuery(featuredQuerySchema), featuredController);
+apiRouter.get('/articles/rss.xml', validateQuery(rssQuerySchema), rssController);
 apiRouter.get('/articles', validateQuery(listQuerySchema), listArticlesController);
 apiRouter.get('/articles/:id', getArticleController);
 apiRouter.get('/articles/:id/related', validateQuery(relatedQuerySchema), relatedController);
