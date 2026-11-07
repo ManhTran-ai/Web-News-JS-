@@ -1,15 +1,19 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { rootReducer } from '../index';
-import { authReducer, setUser, logout, selectCurrentUser, selectIsAuthenticated } from './authSlice';
-import type { User } from '@/types/article';
-
-const user: User = {
-  id: 'u1',
-  fullName: 'Nguyễn Văn A',
-  avatar: 'https://cdn.vn/a.jpg',
-  email: 'a@example.com',
-};
+import {
+  authReducer,
+  login,
+  register,
+  logout,
+  clearAuthError,
+  selectCurrentUser,
+  selectIsAuthenticated,
+  selectAuthError,
+  validateCredentials,
+  validateRegister,
+} from './authSlice';
 
 function makeStore() {
   return configureStore({ reducer: rootReducer });
@@ -22,31 +26,74 @@ describe('authSlice', () => {
     expect(state.isAuthenticated).toBe(false);
   });
 
-  it('đăng nhập cập nhật user và trạng thái', () => {
+  it('đăng ký tạo tài khoản và đăng nhập được', () => {
     const store = makeStore();
+    const email = `user-${Date.now()}@example.com`;
 
-    store.dispatch(setUser(user));
+    store.dispatch(register({ fullName: 'Nguyễn Văn A', email, password: 'matkhau123' }));
 
-    expect(selectCurrentUser(store.getState())).toEqual(user);
     expect(selectIsAuthenticated(store.getState())).toBe(true);
+    expect(selectCurrentUser(store.getState())?.email).toBe(email);
+
+    store.dispatch(logout());
+    store.dispatch(login({ email, password: 'matkhau123' }));
+
+    expect(selectIsAuthenticated(store.getState())).toBe(true);
+    expect(selectCurrentUser(store.getState())?.fullName).toBe('Nguyễn Văn A');
+  });
+
+  it('đăng nhập sai mật khẩu báo lỗi', () => {
+    const store = makeStore();
+    const email = `wrong-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn B', email, password: 'matkhau123' }));
+    store.dispatch(logout());
+    store.dispatch(login({ email, password: 'saimatkhau' }));
+
+    expect(selectIsAuthenticated(store.getState())).toBe(false);
+    expect(selectAuthError(store.getState())).toBeTruthy();
+  });
+
+  it('đăng ký trùng email bị từ chối', () => {
+    const store = makeStore();
+    const email = `dup-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn C', email, password: 'matkhau123' }));
+    store.dispatch(logout());
+    store.dispatch(register({ fullName: 'Nguyễn Văn D', email, password: 'matkhau123' }));
+
+    expect(selectIsAuthenticated(store.getState())).toBe(false);
+    expect(selectAuthError(store.getState())).toBe('Email này đã được đăng ký.');
   });
 
   it('đăng xuất xoá user', () => {
     const store = makeStore();
 
-    store.dispatch(setUser(user));
     store.dispatch(logout());
 
     expect(selectCurrentUser(store.getState())).toBeNull();
     expect(selectIsAuthenticated(store.getState())).toBe(false);
   });
 
-  it('setUser với null đăng xuất', () => {
+  it('xoá lỗi auth', () => {
     const store = makeStore();
 
-    store.dispatch(setUser(user));
-    store.dispatch(setUser(null));
+    store.dispatch(login({ email: 'khong-ton-tai@example.com', password: 'matkhau123' }));
+    expect(selectAuthError(store.getState())).toBeTruthy();
 
-    expect(selectIsAuthenticated(store.getState())).toBe(false);
+    store.dispatch(clearAuthError());
+    expect(selectAuthError(store.getState())).toBeNull();
+  });
+
+  it('validate email và mật khẩu', () => {
+    expect(validateCredentials({ email: 'sai-dinh-dang', password: '123456' }).email).toBeTruthy();
+    expect(validateCredentials({ email: 'a@example.com', password: '123' }).password).toBeTruthy();
+    expect(validateCredentials({ email: 'a@example.com', password: '123456' })).toEqual({});
+  });
+
+  it('validate đăng ký yêu cầu họ tên', () => {
+    expect(
+      validateRegister({ fullName: '  ', email: 'a@example.com', password: '123456' }).fullName,
+    ).toBeTruthy();
   });
 });
