@@ -31,8 +31,15 @@ hoặc một nhóm API đã sẵn sàng.
 | **Ngân** | `ArticleDetailPage` + `ArticleBody` — đọc bài trực tiếp trên web + `BookmarkButton` | `17b637e` |
 | **Ngân** | `SavedPage` — 2 tab đã lưu + lịch sử đã đọc | `d9975d3` |
 | **Ngân** | Fix `app.test.ts` — đổi kiểu sang `AppServer` + chuẩn hoá comment | `4846265` |
+| **Mạnh** | `api/http.ts` — ETag/304 + `ApiError` + đọc `X-Request-Id` | `62c6afe` |
+| **Mạnh** | `api/endpoints.ts` — `getArticles` (lọc kết hợp) + `getRSS` | `01c1c06` |
+| **Mạnh** | `articlesSlice` — entity adapter + cache theo key + TTL 60s | `b23a27f` |
+| **Mạnh** | `useListArticles` — trả `{ items, meta, status }` | `12020cb` |
+| **Mạnh** | `CategoryIndexPage` — lưới chuyên mục + bài mới đại diện | `16a8239` |
+| **Mạnh** | `CategoryPage` — lọc theo nguồn + phân trang | `b2179df` |
+| **Mạnh** | `SearchPage` — tìm kiếm debounce 400ms + lọc kết hợp | `74e4f56` |
 
-**Tổng: 13 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
+**Tổng: 20 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
 `ManhTran-ai` (41), `23130205-dev` (11), `levantai` (9), `Trần Thị Thanh Ngân` (1).
 > 4 dòng này là do **tên tác giả** khác nhau trong lịch sử. GitHub Insights gộp theo
 > email → hiển thị 3 tài khoản; `git shortlog` gộp theo **tên** → hiển thị 4 dòng.
@@ -42,27 +49,24 @@ hoặc một nhóm API đã sẵn sàng.
 
 | Người | Việc còn lại | Vì sao gấp |
 |---|---|---|
-| **Mạnh** | **3 trang lớn còn là stub TODO**: `CategoryIndexPage.tsx`, `CategoryPage.tsx`, `SearchPage.tsx` | Đây là phần lớn khối lượng Mạnh theo docx, giảng viên sẽ mở đúng 3 file này |
-| **Mạnh** | `api/http.ts` chưa có ETag/304, chưa đọc `X-Request-Id` | Yêu cầu 4 (không gọi lại API) |
-| **Mạnh** | `api/endpoints.ts` thiếu `getArticles({category, source, q, since, until})`, `getRSS` | Chưa lọc được theo chuyên mục + nguồn |
-| **Mạnh** | `articlesSlice` chưa có TTL, chưa cache `related:<id>` | Yêu cầu 4 |
-| **Mạnh** | `useListArticles` chỉ trả `Article[]`, chưa trả `meta`/`status` | Phân trang cần `meta.page` |
 | **Ngân** | `CommentSection.tsx` — chưa tồn tại | Yêu cầu 5 (bình luận tên thật / ẩn danh) |
 | **Ngân** | `ReaderToolbar.tsx` — chưa tồn tại | Yêu cầu 6 (A+/A-, TTS) |
 | **Ngân** | `ArticleDetailPage` chưa render 6 bài liên quan (`/api/articles/:id/related`) | Yêu cầu phân công mục III |
+| **Mạnh** | `articlesSlice` chưa cache `related:<id>` (tuần 3 #1) | Yêu cầu 4 |
 | **Tài** | `router.tsx` chưa lazy-load, chưa có `ScrollRestoration` | Yêu cầu phân công |
 | **Tài** | `AppFooter` chưa hoàn thiện | Yêu cầu phân công |
 
-### 0.3. Ba trang vẫn còn chữ "TODO" trong mã nguồn
+### 0.3. Ba trang lớn của Mạnh — đã xong (08/11/2026)
 
 ```
-client/src/pages/CategoryIndexPage.tsx   ← Mạnh
-client/src/pages/CategoryPage.tsx        ← Mạnh
-client/src/pages/SearchPage.tsx          ← Mạnh
+client/src/pages/CategoryIndexPage.tsx   ✅ 16a8239
+client/src/pages/CategoryPage.tsx        ✅ b2179df
+client/src/pages/SearchPage.tsx          ✅ 74e4f56
 ```
 
-Đây là 3 file duy nhất trong toàn bộ `client/src` còn placeholder. Giảng viên mở repo sẽ
-thấy ngay. **Ưu tiên số 1 của tuần này là Mạnh.**
+Đây là 3 file duy nhất trong toàn bộ `client/src` từng còn placeholder. Hiện **không còn
+file nào trong `client/src` chứa chữ "TODO"** — giảng viên mở repo sẽ thấy toàn bộ
+frontend đã hiện thực.
 
 ### 0.4. Những gì đã có sẵn nhưng chưa dùng tới
 
@@ -225,22 +229,26 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 ## 3. TUẦN 2 — 02/11 → 08/11 — "Nền tảng & kết nối API"
 
-> **Trạng thái: đã xong phần Tài + Ngân. Phần Mạnh còn nợ 3 trang lớn.**
+> **Trạng thái: ✅ xong toàn bộ (08/11/2026) — Tài + Ngân + Mạnh.**
 
 ### 🔵 MẠNH — Redux Core, Luồng API, Trang Chuyên Mục & Tìm Kiếm (7 commit)
 
 | # | Commit | Nội dung | File | Trạng thái |
 |---|---|---|---|---|
-| 1 | `feat(client): api/http.ts hoan thiện - xu ly ApiError + ETag 304` | Tự lưu ETag theo URL, gửi `If-None-Match`, khi server trả 304 thì trả cache cũ không re-render | `api/http.ts` | ⬜ `ApiError` có rồi, thiếu ETag |
-| 2 | `feat(client): api/endpoints.ts bo sung tham so since/until va filter` | Thêm `getArticles({ category, source, q, since, until, page, limit })` và `getRSS(category, limit)` | `api/endpoints.ts` | ⬜ thiếu `getArticles` + `getRSS` |
-| 3 | `feat(client): articlesSlice - entity adapter + cache theo key` | `createEntityAdapter` + map cache key `latest` / `featured` / `category:thoi-su` / `search:viet-nam`, lưu `lastFetched` để không gọi lại trong 60s | `store/slices/articlesSlice.ts` | ⬜ có adapter + key, thiếu TTL |
+| 1 | `feat(client): api/http.ts hoan thiện - xu ly ApiError + ETag 304` | Tự lưu ETag theo URL, gửi `If-None-Match`, khi server trả 304 thì trả cache cũ không re-render | `api/http.ts` | ✅ xong (`62c6afe`) |
+| 2 | `feat(client): api/endpoints.ts bo sung tham so since/until va filter` | Thêm `getArticles({ category, source, q, since, until, page, limit })` và `getRSS(category, limit)` | `api/endpoints.ts` | ✅ xong (`01c1c06`) |
+| 3 | `feat(client): articlesSlice - entity adapter + cache theo key` | `createEntityAdapter` + map cache key `latest` / `featured` / `category:thoi-su` / `search:viet-nam`, lưu `lastFetched` để không gọi lại trong 60s | `store/slices/articlesSlice.ts` | ✅ xong (`b23a27f`) |
 | 4 | `feat(client): categoriesSlice + sourcesSlice - goi 1 lan khi khoi dong` | Fetch một lần lúc khởi động, có `selectCategoryBySlug`, `selectSourceById` memo hóa; khai báo reducer trong `store/index.ts` + typed hook `store/hooks.ts` | `store/slices/categoriesSlice.ts`, `store/slices/sourcesSlice.ts`, `store/index.ts`, `store/hooks.ts` | ✅ xong (`4453194`) |
-| 5 | `feat(client): hooks useListArticles/useDebounce/usePolling` | `useListArticles(key, params)` trả `{ items, meta, status }`; `useDebounce` 400ms; `usePolling` 60s cho latest | `hooks/*.ts` | ⬜ `useListArticles` chưa trả `meta`/`status` |
-| 6 | `feat(client): CategoryIndexPage - luoi chuyen muc + bai moi dai dien` | Grid Bootstrap, mỗi ô có `count` và bài mới nhất, ảnh lỗi → placeholder | `pages/CategoryIndexPage.tsx` | ⬜ **còn stub TODO** |
-| 7 | `feat(client): CategoryPage + SearchPage - loc, phan trang, tim khong dau` | Lọc theo 5 nguồn tin, phân trang theo `meta.page` / `meta.totalPages`, tìm kiếm `useDebounce` 400ms, hiển thị `meta.total`. **Lọc kết hợp chuyên mục + nguồn + `q` phải gọi `/api/articles?q=`** (endpoint `/api/search` chỉ nhận `q`, `page`, `limit` — xem rủi ro #6) | `pages/CategoryPage.tsx`, `pages/SearchPage.tsx` | ⬜ **còn stub TODO** |
+| 5 | `feat(client): hooks useListArticles/useDebounce/usePolling` | `useListArticles(key, params)` trả `{ items, meta, status }`; `useDebounce` 400ms; `usePolling` 60s cho latest | `hooks/*.ts` | ✅ xong (`12020cb`) |
+| 6 | `feat(client): CategoryIndexPage - luoi chuyen muc + bai moi dai dien` | Grid Bootstrap, mỗi ô có `count` và bài mới nhất, ảnh lỗi → placeholder | `pages/CategoryIndexPage.tsx` | ✅ xong (`16a8239`) |
+| 7 | `feat(client): CategoryPage + SearchPage - loc, phan trang, tim khong dau` | Lọc theo 5 nguồn tin, phân trang theo `meta.page` / `meta.totalPages`, tìm kiếm `useDebounce` 400ms, hiển thị `meta.total`. **Lọc kết hợp chuyên mục + nguồn + `q` phải gọi `/api/articles?q=`** (endpoint `/api/search` chỉ nhận `q`, `page`, `limit` — xem rủi ro #6) | `pages/CategoryPage.tsx`, `pages/SearchPage.tsx` | ✅ xong (`b2179df`, `74e4f56`) |
 
 > Commit #3 là câu trả lời cho câu hỏi của giảng viên *"Dùng Redux như thế nào để tránh gọi lại
-> API và tốn bộ nhớ?"*. Nên nêu rõ cơ chế trong commit message.
+> API và tốn bộ nhớ?"*. Sên nêu rõ cơ chế trong commit message.
+>
+> **Ghi chú về #7:** roadmap gốc gộp 2 trang vào 1 commit, nhưng để giữ đúng số
+> **7 commit / tuần** như bảng phân công, em tách thành 2 commit:
+> `b2179df` (CategoryPage) và `74e4f56` (SearchPage).
 
 ### 🟢 TÀI — Layout, UI/UX, Dark Mode, Trang Chủ (6 commit)
 
@@ -342,22 +350,23 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 | | Tuần 2 | Tuần 3 | Tuần 4 | Tổng | Đã xong |
 |---|---|---|---|---|---|
-| **Mạnh** | 7 | 6 | 6 | **19** | 1 / 19 |
+| **Mạnh** | 7 | 6 | 6 | **19** | 8 / 19 |
 | **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
 | **Ngân** | 5 | 7 | 6 | **18** | 8 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 24 / 53 |
+| **Tổng** | 18 | 18 | 17 | **53** | 31 / 53 |
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
-Vì 3 trang lớn của Mạnh vẫn là stub, đó là nợ cấp bậc 1 — nhưng Ngân cũng còn 2 file
-chưa tồn tại (`CommentSection.tsx`, `ReaderToolbar.tsx`) là 2 yêu cầu trực tiếp từ giảng viên.
+Tuần 2 đã đóng lại với đủ 7 commit của Mạnh. Sang tuần 3, nợ cấp bậc 1 chuyển sang
+**Ngân** (2 file chưa tồn tại: `CommentSection.tsx`, `ReaderToolbar.tsx` — là 2 yêu cầu trực
+tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên quan cao").
 
 | Thứ tự | Người | Việc | Commit dự kiến |
 |---|---|---|---|
-| 1 | **Mạnh** | 3 trang lớn (CategoryIndex / Category / Search) | #6, #7 tuần 2 → 2 commit |
-| 2 | **Mạnh** | `api/http.ts` ETag + `api/endpoints.ts` `getArticles`/`getRSS` | #1, #2 tuần 2 → 2 commit |
-| 3 | **Ngân** | `CommentSection.tsx` (khoá + switch ẩn danh) | #3, #4 tuần 3 → 2 commit |
-| 4 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit |
+| 1 | **Ngân** | `CommentSection.tsx` (khoá + switch ẩn danh) | #3, #4 tuần 3 → 2 commit |
+| 2 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit |
+| 3 | **Mạnh** | `articlesSlice` cache `related:<id>` + gọi `getRSS` | #1 tuần 3 → 1 commit |
+| 4 | **Mạnh** | Badge "liên quan cao" cho 3 kết quả đầu khi có `q` | #2 tuần 3 → 1 commit |
 | 5 | **Tài** | `router.tsx` lazy-load + `ScrollRestoration` | #5 tuần 3 → 1 commit |
 
 ---
@@ -385,27 +394,27 @@ chưa tồn tại (`CommentSection.tsx`, `ReaderToolbar.tsx`) là 2 yêu cầu t
 | Yêu cầu | Người phụ trách | Commit bảo vệ | Trạng thái |
 |---|---|---|---|
 | 1, 2, 3 — RSS, nội dung đầy đủ, không cần Extension | Ngân (+ Mạnh) | Ngân #4 + #1 tuần 2 | ✅ xong (`17b637e`, `180df90`) |
-| 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ⬜ thiếu TTL + ETag |
+| 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ✅ xong (`b23a27f`, `62c6afe`) |
 | 5, 6 — Đăng nhập, bình luận ẩn danh, tiện ích đọc | Ngân (+ Tài) | Ngân #2–#5 tuần 3, Ngân #3 tuần 4 | ⬜ auth ✅, bình luận + Reader ⬜ |
 | Giao diện báo điện tử, dark mode, trang chủ | Tài | Tài #1–#6 tuần 2, Tài #4 tuần 3 | ✅ xong |
-| Chuyên mục / tìm kiếm / phân trang | Mạnh | Mạnh #6, #7 tuần 2 | ⬜ 3 trang còn stub |
+| Chuyên mục / tìm kiếm / phân trang | Mạnh | Mạnh #6, #7 tuần 2 | ✅ xong (`16a8239`, `b2179df`, `74e4f56`) |
 
 ### 8.1. Đối chiếu chi tiết mục III của file phân công (từng file được giao)
 
 | Người | File docx giao | Commit trong roadmap | Trạng thái |
 |---|---|---|---|
 | Mạnh | `types/article.ts` | Mạnh #4 tuần 4 | Đã có nền từ `4453194` (tuần 1), tuần 4 chuẩn hoá lại |
-| Mạnh | `api/http.ts` | Mạnh #1 tuần 2, #2–#3 + #5 tuần 4 | ⬜ |
-| Mạnh | `api/endpoints.ts` | Mạnh #2 tuần 2, #1 tuần 3, #2/#4 tuần 4 | ⬜ |
+| Mạnh | `api/http.ts` | Mạnh #1 tuần 2, #2–#3 + #5 tuần 4 | ✅ xong (`62c6afe`) |
+| Mạnh | `api/endpoints.ts` | Mạnh #2 tuần 2, #1 tuần 3, #2/#4 tuần 4 | ✅ xong (`01c1c06`) |
 | Mạnh | `store/index.ts`, `store/hooks.ts` | Mạnh #4 tuần 2 | ✅ xong (`4453194`) |
 | Mạnh | `store/slices/categoriesSlice.ts` | Mạnh #4 tuần 2 | ✅ xong (`4453194`) |
-| Mạnh | `store/slices/articlesSlice.ts` | Mạnh #3 tuần 2, #1/#2/#4 tuần 3, #1 tuần 4 | ⬜ có adapter, thiếu TTL + related |
-| Mạnh | `hooks/useListArticles.ts` | Mạnh #5 tuần 2 | ⬜ chưa trả `meta`/`status` |
+| Mạnh | `store/slices/articlesSlice.ts` | Mạnh #3 tuần 2, #1/#2/#4 tuần 3, #1 tuần 4 | ✅ xong (`b23a27f`) — còn `related:<id>` ở tuần 3 #1 |
+| Mạnh | `hooks/useListArticles.ts` | Mạnh #5 tuần 2 | ✅ xong (`12020cb`) |
 | Mạnh | `hooks/useDebounce.ts` (400ms) | Mạnh #5 tuần 2 | ✅ xong (`4453194`) |
 | Mạnh | `hooks/usePolling.ts` | Mạnh #5 tuần 2, #3 tuần 3 | ⬜ cần backoff + `visibilitychange` |
-| Mạnh | `pages/CategoryIndexPage.tsx` | Mạnh #6 tuần 2 | ⬜ **còn stub TODO** |
-| Mạnh | `pages/CategoryPage.tsx` | Mạnh #7 tuần 2 | ⬜ **còn stub TODO** |
-| Mạnh | `pages/SearchPage.tsx` | Mạnh #7 tuần 2 | ⬜ **còn stub TODO** |
+| Mạnh | `pages/CategoryIndexPage.tsx` | Mạnh #6 tuần 2 | ✅ xong (`16a8239`) |
+| Mạnh | `pages/CategoryPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`b2179df`) |
+| Mạnh | `pages/SearchPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`74e4f56`) |
 | Tài | `router.tsx` | Tài #5 tuần 3 | ⬜ chưa lazy-load |
 | Tài | `layouts/RootLayout.tsx` | Tài #2 tuần 2, #5 tuần 3 | ✅ xong (`dfc2236`) |
 | Tài | `layouts/CategoryLayout.tsx` | Tài #3 tuần 2 | ✅ xong (`ca0c0ad`) |
