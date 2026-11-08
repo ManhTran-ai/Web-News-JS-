@@ -1,29 +1,45 @@
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
-import type { Server } from 'node:http';
 import { createApp } from './app.js';
 
-let server: Server;
+// Khai báo kiểu Server
+type AppServer = ReturnType<ReturnType<typeof createApp>['listen']>;
+
+let server: AppServer;
 let baseUrl: string;
 
+// Khởi tạo server trước khi chạy kiểm thử
 beforeAll(async () => {
   const app = createApp();
+
   await new Promise<void>((resolve) => {
-    server = app.listen(0, resolve);
+    server = app.listen(0, () => {
+      resolve();
+    });
   });
 
   const address = server.address();
+
   if (!address || typeof address === 'string') {
     throw new Error('Không lấy được cổng server');
   }
+
   baseUrl = `http://127.0.0.1:${address.port}`;
 });
 
+// Đóng server sau khi hoàn thành kiểm thử
 afterAll(async () => {
   await new Promise<void>((resolve, reject) => {
-    server.close((error) => (error ? reject(error) : resolve()));
+    server.close((error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
   });
 });
 
+// Kiểm thử API Health
 describe('GET /api/health', () => {
   it('trả về trạng thái server', async () => {
     const response = await fetch(`${baseUrl}/api/health`);
@@ -35,6 +51,7 @@ describe('GET /api/health', () => {
   });
 });
 
+// Kiểm thử API Categories
 describe('GET /api/categories', () => {
   it('trả về 11 chuyên mục chuẩn', async () => {
     const response = await fetch(`${baseUrl}/api/categories`);
@@ -47,6 +64,7 @@ describe('GET /api/categories', () => {
   });
 });
 
+// Kiểm thử API Sources
 describe('GET /api/sources', () => {
   it('trả về 5 nguồn tin cùng trạng thái', async () => {
     const response = await fetch(`${baseUrl}/api/sources`);
@@ -60,6 +78,7 @@ describe('GET /api/sources', () => {
   });
 });
 
+// Kiểm thử API Articles
 describe('GET /api/articles', () => {
   it('trả về danh sách bài kèm meta phân trang', async () => {
     const response = await fetch(`${baseUrl}/api/articles?page=1&limit=5`);
@@ -79,6 +98,7 @@ describe('GET /api/articles', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+
     for (const article of body.data) {
       expect(article.category).toBe('thoi-su');
     }
@@ -89,6 +109,7 @@ describe('GET /api/articles', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+
     for (const article of body.data) {
       expect(article.sourceId).toBe('vnexpress');
     }
@@ -112,10 +133,12 @@ describe('GET /api/articles', () => {
 
   it('từ chối page không hợp lệ', async () => {
     const response = await fetch(`${baseUrl}/api/articles?page=0`);
+
     expect(response.status).toBe(400);
   });
 });
 
+// Kiểm thử API Latest Articles
 describe('GET /api/articles/latest', () => {
   it('trả về bài mới nhất', async () => {
     const response = await fetch(`${baseUrl}/api/articles/latest?limit=5`);
@@ -126,6 +149,7 @@ describe('GET /api/articles/latest', () => {
   });
 });
 
+// Kiểm thử API Featured Articles
 describe('GET /api/articles/featured', () => {
   it('trả về bài nổi bật', async () => {
     const response = await fetch(`${baseUrl}/api/articles/featured?limit=3`);
@@ -136,6 +160,7 @@ describe('GET /api/articles/featured', () => {
   });
 });
 
+// Kiểm thử API Article Detail
 describe('GET /api/articles/:id', () => {
   it('trả 404 với id không tồn tại', async () => {
     const response = await fetch(`${baseUrl}/api/articles/khong-ton-tai`);
@@ -146,13 +171,16 @@ describe('GET /api/articles/:id', () => {
   });
 });
 
+// Kiểm thử API Related Articles
 describe('GET /api/articles/:id/related', () => {
   it('trả 404 với id không tồn tại', async () => {
     const response = await fetch(`${baseUrl}/api/articles/khong-ton-tai/related`);
+
     expect(response.status).toBe(404);
   });
 });
 
+// Kiểm thử API Article Content
 describe('GET /api/articles/:id/content', () => {
   it('trả 404 với id không tồn tại', async () => {
     const response = await fetch(`${baseUrl}/api/articles/khong-ton-tai/content`);
@@ -163,6 +191,7 @@ describe('GET /api/articles/:id/content', () => {
   });
 });
 
+// Kiểm thử API Search
 describe('GET /api/search', () => {
   it('trả về kết quả tìm kiếm', async () => {
     const response = await fetch(`${baseUrl}/api/search?q=viet&limit=5`);
@@ -174,10 +203,12 @@ describe('GET /api/search', () => {
 
   it('từ chối từ khoá rỗng', async () => {
     const response = await fetch(`${baseUrl}/api/search?q=`);
+
     expect(response.status).toBe(400);
   });
 });
 
+// Kiểm thử API RSS
 describe('GET /api/articles/rss.xml', () => {
   it('trả về RSS hợp lệ', async () => {
     const response = await fetch(`${baseUrl}/api/articles/rss.xml?limit=3`);
@@ -190,6 +221,7 @@ describe('GET /api/articles/rss.xml', () => {
   });
 });
 
+// Kiểm thử route không tồn tại
 describe('route không tồn tại', () => {
   it('trả 404 với định dạng lỗi chuẩn', async () => {
     const response = await fetch(`${baseUrl}/api/khong-co`);
@@ -201,18 +233,22 @@ describe('route không tồn tại', () => {
   });
 });
 
+// Kiểm thử header bảo mật
 describe('header bảo mật', () => {
   it('không lộ công nghệ server', async () => {
     const response = await fetch(`${baseUrl}/api/health`);
+
     expect(response.headers.get('x-powered-by')).toBeNull();
   });
 
   it('có X-Request-Id cho mỗi request', async () => {
     const response = await fetch(`${baseUrl}/api/health`);
+
     expect(response.headers.get('x-request-id')).toBeTruthy();
   });
 });
 
+// Kiểm thử cache ETag
 describe('cache ETag', () => {
   it('trả 304 khi If-None-Match khớp', async () => {
     const first = await fetch(`${baseUrl}/api/articles/latest?limit=5`);
@@ -222,7 +258,9 @@ describe('cache ETag', () => {
     expect(first.headers.get('cache-control')).toContain('max-age');
 
     const second = await fetch(`${baseUrl}/api/articles/latest?limit=5`, {
-      headers: { 'If-None-Match': etag as string },
+      headers: {
+        'If-None-Match': etag as string,
+      },
     });
 
     expect(second.status).toBe(304);
@@ -230,7 +268,9 @@ describe('cache ETag', () => {
 
   it('trả 200 khi nội dung thay đổi', async () => {
     const response = await fetch(`${baseUrl}/api/articles/latest?limit=5`, {
-      headers: { 'If-None-Match': 'W/"khong-ton-tai"' },
+      headers: {
+        'If-None-Match': 'W/"khong-ton-tai"',
+      },
     });
 
     expect(response.status).toBe(200);
