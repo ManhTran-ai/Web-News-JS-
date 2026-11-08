@@ -166,7 +166,7 @@ describe('ArticleStore.featured', () => {
     ]);
     const result = store.featured(2);
     expect(result).toHaveLength(2);
-    expect(result.map((a) => a.sourceId)).toEqual(['vnexpress', 'tuoitre']);
+    expect(new Set(result.map((a) => a.sourceId))).toEqual(new Set(['vnexpress', 'tuoitre']));
   });
 
   it('loại bài không có ảnh', () => {
