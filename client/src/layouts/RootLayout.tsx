@@ -14,7 +14,7 @@ const TICKER_COUNT = 6;
 
 export function RootLayout() {
   const dispatch = useAppDispatch();
-  const latest = useListArticles(LIST_LATEST);
+  const { items: latest } = useListArticles(LIST_LATEST);
 
   useEffect(() => {
     void dispatch(fetchLatest(LATEST_LIMIT));
