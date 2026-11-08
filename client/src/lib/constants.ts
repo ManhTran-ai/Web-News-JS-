@@ -11,6 +11,12 @@ export const STORAGE_KEYS = {
 
 export const PAGE_SIZE = 20;
 
+/** Thời gian cache danh sách bài (ms) — trong 60s không gọi lại API cùng một tham số. */
+export const LIST_CACHE_TTL_MS = 60_000;
+
+/** Cache cho danh sách "mới nhất" — ngắn hơn vì được polling 60s/lần. */
+export const LATEST_CACHE_TTL_MS = 30_000;
+
 /** Số nội dung bài viết tối đa được giữ trong RAM của Redux. */
 export const MAX_CACHED_CONTENTS = 50;
 
