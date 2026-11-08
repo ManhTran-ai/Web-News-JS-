@@ -7,20 +7,24 @@ import {
 } from '@reduxjs/toolkit';
 import {
   getArticleById,
-  getByCategory,
+  getArticles,
   getFeatured,
   getLatest,
   searchArticles as searchArticlesApi,
 } from '@/api/endpoints';
 import { toApiError } from '@/api/http';
+import { LATEST_CACHE_TTL_MS, LIST_CACHE_TTL_MS } from '@/lib/constants';
 import type { Article, ListMeta, RequestStatus } from '@/types/article';
 import type { RootState } from '../index';
+
+type ThunkConfig = { state: RootState };
 
 interface ListEntry {
   ids: string[];
   status: RequestStatus;
   error: string | null;
   meta: ListMeta | null;
+  lastFetched: number | null;
 }
 
 interface ArticlesState extends EntityState<Article, string> {
@@ -29,7 +33,13 @@ interface ArticlesState extends EntityState<Article, string> {
 
 const articlesAdapter = createEntityAdapter<Article>();
 
-const emptyEntry: ListEntry = { ids: [], status: 'idle', error: null, meta: null };
+const emptyEntry: ListEntry = {
+  ids: [],
+  status: 'idle',
+  error: null,
+  meta: null,
+  lastFetched: null,
+};
 
 const initialState: ArticlesState = articlesAdapter.getInitialState({
   lists: {},
@@ -38,42 +48,197 @@ const initialState: ArticlesState = articlesAdapter.getInitialState({
 export const LIST_LATEST = 'latest';
 export const LIST_FEATURED = 'featured';
 
-export function listKeyCategory(category: string): string {
-  return `category:${category}`;
+export interface ArticleQuery {
+  category?: string;
+  source?: string;
+  q?: string;
+  since?: string;
+  until?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function listKeySearch(q: string): string {
-  return `search:${q}`;
+export function listKeyCategory(category: string, page = 1, source?: string): string {
+  const parts = [`category:${category}`];
+  if (source) parts.push(`src:${source}`);
+  if (page > 1) parts.push(`p${page}`);
+  return parts.join(':');
 }
 
-export const fetchLatest = createAsyncThunk('articles/fetchLatest', async (arg: number | undefined) => {
-  return getLatest(arg ?? 20);
-});
+/** Bài mới nhất đại diện của một chuyên mục — tách key riêng để không đè cache danh sách đầy đủ. */
+export function listKeyCategoryLatest(category: string): string {
+  return `category:${category}:latest`;
+}
 
-export const fetchFeatured = createAsyncThunk(
+export function listKeySearch(
+  q: string,
+  filters?: { category?: string; source?: string; page?: number },
+): string {
+  const parts = [`search:${q}`];
+  if (filters?.category) parts.push(`cat:${filters.category}`);
+  if (filters?.source) parts.push(`src:${filters.source}`);
+  if (filters?.page && filters.page > 1) parts.push(`p:${filters.page}`);
+  return parts.join('|');
+}
+
+/** Key cho danh sách tổng hợp theo bộ lọc (dùng cho `/api/articles`). */
+export function listKeyQuery(query: ArticleQuery): string {
+  const parts = ['query'];
+  if (query.q) parts.push(`q:${query.q}`);
+  if (query.category) parts.push(`cat:${query.category}`);
+  if (query.source) parts.push(`src:${query.source}`);
+  if (query.since) parts.push(`since:${query.since}`);
+  if (query.until) parts.push(`until:${query.until}`);
+  if (query.page && query.page > 1) parts.push(`p:${query.page}`);
+  return parts.join('|');
+}
+
+/**
+ * Kiểm tra cache còn hiệu lực không.
+ * - Chưa có → cần gọi API.
+ * - Đang tải → có request trước đang chạy, không gọi lại.
+ * - Vừa tải xong (trong TTL) → dùng cache, không gọi lại.
+ */
+function isCacheFresh(state: RootState, key: string, ttl: number): boolean {
+  const entry = state.articles.lists[key];
+  if (!entry) return false;
+  if (entry.status === 'loading') return true;
+  if (entry.lastFetched === null) return false;
+  return Date.now() - entry.lastFetched < ttl;
+}
+
+export const fetchLatest = createAsyncThunk<
+  Awaited<ReturnType<typeof getLatest>>,
+  number | undefined,
+  ThunkConfig
+>(
+  'articles/fetchLatest',
+  async (limit) => {
+    return getLatest(limit ?? 20);
+  },
+  {
+    condition: (_limit, { getState }) =>
+      !isCacheFresh(getState(), LIST_LATEST, LATEST_CACHE_TTL_MS),
+  },
+);
+
+export const fetchFeatured = createAsyncThunk<
+  Awaited<ReturnType<typeof getFeatured>>,
+  number | undefined,
+  ThunkConfig
+>(
   'articles/fetchFeatured',
-  async (arg: number | undefined) => {
-    return getFeatured(arg ?? 10);
+  async (limit) => {
+    return getFeatured(limit ?? 10);
+  },
+  {
+    condition: (_limit, { getState }) =>
+      !isCacheFresh(getState(), LIST_FEATURED, LIST_CACHE_TTL_MS),
   },
 );
 
-export const fetchByCategory = createAsyncThunk(
+export const fetchByCategory = createAsyncThunk<
+  Awaited<ReturnType<typeof getArticles>>,
+  { category: string; source?: string; limit?: number; page?: number },
+  ThunkConfig
+>(
   'articles/fetchByCategory',
-  async (params: { category: string; limit?: number }) => {
-    return getByCategory(params.category, params.limit ?? 20);
+  async (params) => {
+    return getArticles({
+      category: params.category,
+      source: params.source,
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+    });
+  },
+  {
+    condition: (params, { getState }) =>
+      !isCacheFresh(
+        getState(),
+        listKeyCategory(params.category, params.page ?? 1, params.source),
+        LIST_CACHE_TTL_MS,
+      ),
   },
 );
 
-export const searchArticles = createAsyncThunk(
+/** Bài mới nhất của một chuyên mục — dùng cho ô đại diện ở trang index chuyên mục. */
+export const fetchCategoryLatest = createAsyncThunk<
+  Awaited<ReturnType<typeof getArticles>>,
+  { category: string },
+  ThunkConfig
+>(
+  'articles/fetchCategoryLatest',
+  async (params) => {
+    return getArticles({ category: params.category, page: 1, limit: 1 });
+  },
+  {
+    condition: (params, { getState }) =>
+      !isCacheFresh(getState(), listKeyCategoryLatest(params.category), LIST_CACHE_TTL_MS),
+  },
+);
+
+export const searchArticles = createAsyncThunk<
+  Awaited<ReturnType<typeof searchArticlesApi>>,
+  { q: string; limit?: number; page?: number },
+  ThunkConfig
+>(
   'articles/search',
-  async (params: { q: string; limit?: number }) => {
-    return searchArticlesApi(params.q, params.limit ?? 20);
+  async (params) => {
+    return searchArticlesApi(params.q, params.limit ?? 20, params.page ?? 1);
+  },
+  {
+    condition: (params, { getState }) =>
+      !isCacheFresh(
+        getState(),
+        listKeySearch(params.q, { page: params.page }),
+        LIST_CACHE_TTL_MS,
+      ),
+  },
+);
+
+/**
+ * Tìm kiếm có lọc kết hợp (chuyên mục + nguồn + từ khoá).
+ * `/api/search` chỉ nhận `q` nên phải dùng `/api/articles`.
+ */
+export const queryArticles = createAsyncThunk<
+  Awaited<ReturnType<typeof getArticles>>,
+  ArticleQuery,
+  ThunkConfig
+>(
+  'articles/query',
+  async (query) => {
+    return getArticles({ page: 1, limit: 20, ...query });
+  },
+  {
+    condition: (query, { getState }) =>
+      !isCacheFresh(getState(), listKeyQuery(query), LIST_CACHE_TTL_MS),
   },
 );
 
 export const fetchArticleById = createAsyncThunk('articles/fetchById', async (id: string) => {
   return getArticleById(id);
 });
+
+function setLoading(state: ArticlesState, key: string): void {
+  const entry = (state.lists[key] ??= { ...emptyEntry });
+  entry.status = 'loading';
+  entry.error = null;
+}
+
+function setSucceeded(state: ArticlesState, key: string, payload: { data: Article[]; meta: ListMeta }): void {
+  const entry = (state.lists[key] ??= { ...emptyEntry });
+  entry.status = 'succeeded';
+  articlesAdapter.upsertMany(state, payload.data);
+  entry.ids = payload.data.map((a) => a.id);
+  entry.meta = payload.meta;
+  entry.lastFetched = Date.now();
+}
+
+function setFailed(state: ArticlesState, key: string, error: unknown): void {
+  const entry = (state.lists[key] ??= { ...emptyEntry });
+  entry.status = 'failed';
+  entry.error = toApiError(error).message;
+}
 
 const articlesSlice = createSlice({
   name: 'articles',
@@ -86,81 +251,82 @@ const articlesSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchLatest.pending, (state) => {
-        const entry = (state.lists[LIST_LATEST] ??= { ...emptyEntry });
-        entry.status = 'loading';
-        entry.error = null;
+        setLoading(state, LIST_LATEST);
       })
       .addCase(fetchLatest.fulfilled, (state, action) => {
-        const entry = (state.lists[LIST_LATEST] ??= { ...emptyEntry });
-        entry.status = 'succeeded';
-        articlesAdapter.upsertMany(state, action.payload.data);
-        entry.ids = action.payload.data.map((a) => a.id);
-        entry.meta = action.payload.meta;
+        setSucceeded(state, LIST_LATEST, action.payload);
       })
       .addCase(fetchLatest.rejected, (state, action) => {
-        const entry = (state.lists[LIST_LATEST] ??= { ...emptyEntry });
-        entry.status = 'failed';
-        entry.error = toApiError(action.error).message;
+        setFailed(state, LIST_LATEST, action.error);
       })
 
       .addCase(fetchFeatured.pending, (state) => {
-        const entry = (state.lists[LIST_FEATURED] ??= { ...emptyEntry });
-        entry.status = 'loading';
-        entry.error = null;
+        setLoading(state, LIST_FEATURED);
       })
       .addCase(fetchFeatured.fulfilled, (state, action) => {
-        const entry = (state.lists[LIST_FEATURED] ??= { ...emptyEntry });
-        entry.status = 'succeeded';
-        articlesAdapter.upsertMany(state, action.payload.data);
-        entry.ids = action.payload.data.map((a) => a.id);
-        entry.meta = action.payload.meta;
+        setSucceeded(state, LIST_FEATURED, action.payload);
       })
       .addCase(fetchFeatured.rejected, (state, action) => {
-        const entry = (state.lists[LIST_FEATURED] ??= { ...emptyEntry });
-        entry.status = 'failed';
-        entry.error = toApiError(action.error).message;
+        setFailed(state, LIST_FEATURED, action.error);
       })
 
       .addCase(fetchByCategory.pending, (state, action) => {
-        const key = listKeyCategory(action.meta.arg.category);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'loading';
-        entry.error = null;
+        setLoading(
+          state,
+          listKeyCategory(action.meta.arg.category, action.meta.arg.page ?? 1, action.meta.arg.source),
+        );
       })
       .addCase(fetchByCategory.fulfilled, (state, action) => {
-        const key = listKeyCategory(action.meta.arg.category);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'succeeded';
-        articlesAdapter.upsertMany(state, action.payload.data);
-        entry.ids = action.payload.data.map((a) => a.id);
-        entry.meta = action.payload.meta;
+        setSucceeded(
+          state,
+          listKeyCategory(action.meta.arg.category, action.meta.arg.page ?? 1, action.meta.arg.source),
+          action.payload,
+        );
       })
       .addCase(fetchByCategory.rejected, (state, action) => {
-        const key = listKeyCategory(action.meta.arg.category);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'failed';
-        entry.error = toApiError(action.error).message;
+        setFailed(
+          state,
+          listKeyCategory(action.meta.arg.category, action.meta.arg.page ?? 1, action.meta.arg.source),
+          action.error,
+        );
+      })
+
+      .addCase(fetchCategoryLatest.pending, (state, action) => {
+        setLoading(state, listKeyCategoryLatest(action.meta.arg.category));
+      })
+      .addCase(fetchCategoryLatest.fulfilled, (state, action) => {
+        setSucceeded(state, listKeyCategoryLatest(action.meta.arg.category), action.payload);
+      })
+      .addCase(fetchCategoryLatest.rejected, (state, action) => {
+        setFailed(state, listKeyCategoryLatest(action.meta.arg.category), action.error);
       })
 
       .addCase(searchArticles.pending, (state, action) => {
-        const key = listKeySearch(action.meta.arg.q);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'loading';
-        entry.error = null;
+        setLoading(state, listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }));
       })
       .addCase(searchArticles.fulfilled, (state, action) => {
-        const key = listKeySearch(action.meta.arg.q);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'succeeded';
-        articlesAdapter.upsertMany(state, action.payload.data);
-        entry.ids = action.payload.data.map((a) => a.id);
-        entry.meta = action.payload.meta;
+        setSucceeded(
+          state,
+          listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }),
+          action.payload,
+        );
       })
       .addCase(searchArticles.rejected, (state, action) => {
-        const key = listKeySearch(action.meta.arg.q);
-        const entry = (state.lists[key] ??= { ...emptyEntry });
-        entry.status = 'failed';
-        entry.error = toApiError(action.error).message;
+        setFailed(
+          state,
+          listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }),
+          action.error,
+        );
+      })
+
+      .addCase(queryArticles.pending, (state, action) => {
+        setLoading(state, listKeyQuery(action.meta.arg));
+      })
+      .addCase(queryArticles.fulfilled, (state, action) => {
+        setSucceeded(state, listKeyQuery(action.meta.arg), action.payload);
+      })
+      .addCase(queryArticles.rejected, (state, action) => {
+        setFailed(state, listKeyQuery(action.meta.arg), action.error);
       })
 
       .addCase(fetchArticleById.fulfilled, (state, action) => {
@@ -184,5 +350,8 @@ export const selectListIds = (state: RootState, key: string): string[] =>
 
 export const selectArticleById = (state: RootState, id: string): Article | undefined =>
   state.articles.entities[id];
+
+export const selectListMeta = (state: RootState, key: string): ListMeta | null =>
+  state.articles.lists[key]?.meta ?? null;
 
 export { selectArticlesEntities };
