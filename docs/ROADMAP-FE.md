@@ -33,7 +33,10 @@ hoặc một nhóm API đã sẵn sàng.
 | **Ngân** | Fix `app.test.ts` — đổi kiểu sang `AppServer` + chuẩn hoá comment | `4846265` |
 
 **Tổng: 13 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
-`ManhTran-ai` (33), `23130205-dev` (11), `levantai` (9).
+`ManhTran-ai` (41), `23130205-dev` (11), `levantai` (9), `Trần Thị Thanh Ngân` (1).
+> 4 dòng này là do **tên tác giả** khác nhau trong lịch sử. GitHub Insights gộp theo
+> email → hiển thị 3 tài khoản; `git shortlog` gộp theo **tên** → hiển thị 4 dòng.
+> Muốn shortlog khớp Insights thì thêm file `.mailmap` ở thư mục gốc repo.
 
 ### 0.2. Chưa làm — ưu tiên cao
 
@@ -110,36 +113,44 @@ thấy ngay. **Ưu tiên số 1 của tuần này là Mạnh.**
 
 ## 2. Quy trình làm việc
 
+> **Quy trình chuẩn của cả 3 thành viên (từ 08/11/2026):**
+>
+> ```bash
+> git pull origin main     # 1. lấy code mới nhất của nhóm
+> # ... viết code mới ...
+> git add -A               # 2. đưa thay đổi vào staging
+> git commit -m "..."      # 3. commit
+> git push                 # 4. đẩy lên nhánh của mình
+> ```
+>
+> Remote `origin` = **`ManhTran-ai/Web-News-JS-`** (repo chính thức giảng viên xem).
+> Repo cũ `23130205-dev/app-news24h` **đã bị gỡ khỏi máy các thành viên** — không push vào đó nữa.
+
 ### 2.1. Setup lần đầu (chỉ làm 1 lần)
 
 ```bash
 git clone https://github.com/ManhTran-ai/Web-News-JS-.git
 cd Web-News-JS-
 
-# Đặt remote chính thức làm mặc định khi push
-git remote rename origin target
+# Đảm bảo push lên đúng nhánh hiện tại
 git config push.default current
-git config remote.pushDefault target
 ```
 
-> Remote chính thức cho giảng viên xem là **`ManhTran-ai/Web-News-JS-`** (remote tên `target`).
-> Không push lên repo `23130205-dev/app-news24h`.
+> Clone từ repo chính thức thì remote tên mặc định đã là `origin` và trỏ đúng URL.
+> Không cần `git remote rename` hay `git remote set-url` gì thêm.
 
 ### 2.2. Đầu tuần — lấy code mới nhất
 
 ```bash
-git fetch --all --prune
-git checkout <nhánh-của-mình>          # Mạnh: ManhTran | Tài: Tài | Ngân: Ngan
-git reset --hard target/<nhánh-của-mình>
-
+git pull origin main
 npm install
 npm run typecheck
 npm test
 ```
 
-> **Bắt buộc `git reset --hard target/<nhánh>` sau `git fetch`.** Lịch sử đã được viết lại
-> ngày 07–08/11/2026 nên SHA cũ của các nhánh local **không còn tồn tại trên remote**.
-> Bỏ bước này thì `git pull` sẽ báo *"diverged"* và tạo merge commit rác.
+> **Vì sao `git pull origin main` là đủ:** `main` luôn được cập nhật mỗi khi Mạnh merge
+> xong, và cả 3 nhánh (`ManhTran`, `Tài`, `Ngan`) đều là ancestor của `main`. Nên pull
+> `main` về luôn là cách nhanh nhất để có code mới nhất của cả nhóm.
 
 ### 2.3. Trong tuần — code và commit
 
@@ -150,7 +161,7 @@ npm test
 
 git add -A
 git commit -m "feat(client): mo ta ngan gon"
-git push                       # tự push lên target/<nhánh-của-mình>
+git push                       # tự push lên origin/<nhánh-của-mình>
 ```
 
 - Mỗi người một nhánh riêng, **không push trực tiếp vào `main`**.
@@ -159,50 +170,42 @@ git push                       # tự push lên target/<nhánh-của-mình>
   `feat` / `fix` / `style` / `perf` / `test` / `docs` / `refactor`.
 - Ngày trong commit message phản ánh ngày thực hiện việc đó.
 
-### 2.4. Nếu đang có code chưa commit
+### 2.4. Khi bị lệch nhánh (sau khi lịch sử được viết lại)
+
+Nếu `git pull` báo *"Your local changes would be overwritten"* hoặc *"diverged"*:
 
 ```bash
-git stash push -u -m "wip tam thoi"     # trước khi reset
-git reset --hard target/<nhánh-của-mình>
-git stash pop                            # sau khi reset
-```
-
-### 2.5. Xử lý khi bị lệch nhánh
-
-```bash
+git stash push -u -m "wip tam thoi"     # giữ code chưa commit
 git fetch --all --prune
-git status                              # xem có thay đổi gì không
-git reset --hard target/<nhánh-của-mình>   # bỏ qua những gì local lệch
+git reset --hard origin/main            # đồng bộ tuyệt đối với main
+git stash pop                           # lấy lại code đang làm dở
 ```
 
-**Không** dùng `git pull` khi báo *"diverged"* — `git pull` sẽ tự tạo merge commit và
-làm lịch sử rối. Dùng `reset --hard` là cách sạch nhất.
+**Không** dùng `git pull` khi báo *"diverged"* — nó sẽ tự tạo merge commit và làm lịch
+sử rối. `fetch` + `reset --hard` là cách sạch nhất.
 
-### 2.6. Trạng thái repo hiện tại (08/11/2026)
+### 2.5. Trạng thái repo hiện tại (08/11/2026)
 
-| Nhánh remote | SHA | Người giữ | Ghi chú |
-|---|---|---|---|
-| `main` | `7e4b938` | Mạnh | Giảng viên xem nhánh này |
-| `ManhTran` | `7e4b938` | Mạnh | Đồng bộ với `main` |
-| `Tài` | `e4ea31b` | Tài | **Cũ hơn `main`** — cần `reset --hard target/main` rồi commit mới |
-| `Ngan` | `4846265` | Ngân | **Cũ hơn `main`** — cần `reset --hard target/main` rồi commit mới |
+| Nhánh remote | Người giữ | Ghi chú |
+|---|---|---|
+| `main` | Mạnh | **Giảng viên xem nhánh này** — cập nhật mỗi cuối tuần |
+| `ManhTran` | Mạnh | Đồng bộ với `main` |
+| `Tài` | Tài | Cần `git pull origin main` lần đầu để có code của nhóm |
+| `Ngan` | Ngân | Cần `git pull origin main` lần đầu để có code của nhóm |
 
-> **Lưu ý quan trọng cho Tài:** nhánh `Tài` trên remote đang ở `e4ea31b` (trước khi Ngân
-> merge vào `main`). Tuần sau code, Tài làm đúng thứ tự:
->
-> ```bash
-> git fetch --all --prune
-> git checkout Tài
-> git reset --hard target/main     # lấy code mới nhất của cả nhóm
-> npm install && npm run typecheck && npm test
-> # code...
-> git add -A && git commit -m "feat(client): ..."
-> git push                          # fast-forward, không lỗi
-> ```
->
-> `git reset --hard target/main` là **an toàn** vì không có commit nào trên `Tài` mà
-> `target/main` chưa có (đã kiểm tra: `e4ea31b` là ancestor của `target/main`).
-> Nhưng vẫn nên chạy `git stash push` trước nếu đang có code chưa commit.
+### 2.6. Lưu ý cho Tài và Ngân (nhánh đang cũ hơn `main`)
+
+Nhánh `Tài` và `Ngan` trên remote được tạo trước khi code của nhóm được merge vào `main`.
+Tuần sau code, **lần đầu tiên** mỗi người làm:
+
+```bash
+git pull origin main
+```
+
+Lệnh này **an toàn** — đã kiểm tra: không có commit nào trên `Tài`/`Ngan` mà `main` chưa có.
+Nhưng nếu đang có code chưa commit thì `git stash push` **trước**, `git stash pop` **sau**.
+
+Từ tuần sau trở đi, chỉ cần đúng 4 lệnh ở mục đầu file là đủ.
 
 ### Chủ sở hữu các file dùng chung
 
@@ -373,7 +376,7 @@ chưa tồn tại (`CommentSection.tsx`, `ReaderToolbar.tsx`) là 2 yêu cầu t
 | 8 | `docs/DESIGN.md` và `docs/CODE_GUIDE.md` đã bị xoá ở `2d57a63` + `3b80988` (07/11) | Tài #5 + Ngân #6 tuần 4 tạo lại 2 file này — tài liệu bàn giao mà giảng viên cần đọc |
 | 9 | Server **không** trả field `score` ra API (chỉ sort nội bộ theo score) | Client tự gắn badge "liên quan cao" cho 3 kết quả đầu khi có `q` — không được đòi `response.score` (Mạnh #2 tuần 3) |
 | 10 | Repo **không** cài `msw`; test hiện dùng `vi.mock` của Vitest | Mạnh #6 tuần 3 viết test bằng `vi.mock` — không thêm dependency mới |
-| 11 | SHA đổi sau khi viết lại lịch sử (08/11) — nhánh local trỏ SHA cũ không còn trên remote | Mỗi người `git fetch --all --prune` rồi `git reset --hard target/<nhánh>` trước khi code (mục 2.2) |
+| 11 | SHA đổi sau khi viết lại lịch sử (08/11) — nhánh local trỏ SHA cũ không còn trên remote | Mỗi người `git pull origin main` đầu tuần; nếu báo *"diverged"* thì dùng `fetch` + `reset --hard origin/main` (mục 2.4) |
 
 ---
 
