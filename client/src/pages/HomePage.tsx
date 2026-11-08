@@ -7,7 +7,6 @@ import {
   LIST_FEATURED,
   LIST_LATEST,
   listKeyCategory,
-  selectListEntry,
 } from '@/store/slices/articlesSlice';
 import { selectCategories } from '@/store/slices/categoriesSlice';
 import { useListArticles } from '@/hooks/useListArticles';
@@ -33,8 +32,7 @@ function withinHours(iso: string, hours: number): boolean {
 function CategoryBlock({ category }: { category: Category }) {
   const dispatch = useAppDispatch();
   const key = listKeyCategory(category.slug);
-  const articles = useListArticles(key);
-  const entry = useAppSelector((state) => selectListEntry(state, key));
+  const { items: articles, isLoading, status, error } = useListArticles(key);
 
   const retry = (): void => {
     void dispatch(fetchByCategory({ category: category.slug, limit: PER_CATEGORY_COUNT }));
@@ -44,7 +42,7 @@ function CategoryBlock({ category }: { category: Category }) {
     <section className="n24-section">
       <SectionHeader title={category.name} to={`/chuyen-muc/${category.slug}`} />
 
-      {entry.status === 'loading' && (
+      {isLoading && articles.length === 0 && (
         <Row className="g-3">
           {Array.from({ length: PER_CATEGORY_COUNT }, (_, index) => (
             <Col xs={12} sm={6} lg={3} key={index}>
@@ -54,18 +52,18 @@ function CategoryBlock({ category }: { category: Category }) {
         </Row>
       )}
 
-      {entry.status === 'failed' && (
-        <ErrorState message={entry.error ?? undefined} onRetry={retry} />
+      {status === 'failed' && (
+        <ErrorState message={error ?? undefined} onRetry={retry} />
       )}
 
-      {entry.status === 'succeeded' && articles.length === 0 && (
+      {status === 'succeeded' && articles.length === 0 && (
         <EmptyState
           title={`Chưa có tin trong ${category.name.toLowerCase()}`}
           description="Mục này hiện chưa có bài viết nào. Hãy quay lại sau ít phút."
         />
       )}
 
-      {entry.status === 'succeeded' && articles.length > 0 && (
+      {articles.length > 0 && (
         <Row className="g-3">
           {articles.map((article) => (
             <Col xs={12} sm={6} lg={3} key={article.id}>
@@ -81,9 +79,9 @@ function CategoryBlock({ category }: { category: Category }) {
 export function HomePage() {
   const dispatch = useAppDispatch();
   const categories = useAppSelector(selectCategories);
-  const featured = useListArticles(LIST_FEATURED);
-  const latest = useListArticles(LIST_LATEST);
-  const featuredEntry = useAppSelector((state) => selectListEntry(state, LIST_FEATURED));
+  const { items: featured, status: featuredStatus, error: featuredError } =
+    useListArticles(LIST_FEATURED);
+  const { items: latest } = useListArticles(LIST_LATEST);
 
   useEffect(() => {
     void dispatch(fetchFeatured(FEATURED_LIMIT));
@@ -118,13 +116,15 @@ export function HomePage() {
           <section className="n24-section">
             <SectionHeader title="Tin nổi bật" to="/chuyen-muc" linkLabel="Tất cả chuyên mục" />
 
-            {featuredEntry.status === 'loading' && <ArticleSkeleton variant="lead" />}
-
-            {featuredEntry.status === 'failed' && (
-              <ErrorState message={featuredEntry.error ?? undefined} onRetry={retryFeatured} />
+            {featuredStatus === 'loading' && featured.length === 0 && (
+              <ArticleSkeleton variant="lead" />
             )}
 
-            {featuredEntry.status === 'succeeded' && featured.length === 0 && (
+            {featuredStatus === 'failed' && (
+              <ErrorState message={featuredError ?? undefined} onRetry={retryFeatured} />
+            )}
+
+            {featuredStatus === 'succeeded' && featured.length === 0 && (
               <EmptyState                title="Chưa có tin nổi bật"
                 description="Dữ liệu đang được cập nhật, vui lòng thử lại sau ít phút."
               />
