@@ -42,3 +42,14 @@ coverage
 
 # Working files c?a taste-skill
 .taste-skill/
+
+# Agent skills / tài liệu tạm
+.agents/
+skills-lock.json
+*.docx
+
+# Bản README mở rộng (12 mục) - chỉ lưu local
+docs/README-ban-12-muc.md
+
+# Thư mục tạm khi verify / simulate
+.tmp-*/
