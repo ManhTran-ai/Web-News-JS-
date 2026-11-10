@@ -24,6 +24,12 @@ export const MAX_CACHED_CONTENTS = 50;
 /** Số bài gần nhất giữ trong lịch sử đọc. */
 export const MAX_READING_HISTORY = 50;
 
+/** Số bài liên quan hiển thị dưới nội dung bài viết. */
+export const RELATED_ARTICLES_COUNT = 6;
+
+/** Thời gian cache danh sách bài liên quan (ms). */
+export const RELATED_CACHE_TTL_MS = 60_000;
+
 /** Cỡ chữ trong phần nội dung bài viết — bước nhảy mỗi lần bấm A+/A-. */
 export const READER_FONT_SCALE_STEP = 0.1;
 export const READER_FONT_SCALE_MIN = 0.8;

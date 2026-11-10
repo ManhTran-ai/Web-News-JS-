@@ -655,12 +655,6 @@ a:hover {
   margin-bottom: var(--n24-space-5);
 }
 
-.article-detail__actions {
-  display: flex;
-  gap: var(--n24-space-3);
-  margin-bottom: var(--n24-space-5);
-}
-
 .article-detail__footer {
   margin-top: var(--n24-space-6);
   padding-top: var(--n24-space-4);
@@ -773,6 +767,10 @@ a:hover {
 
 .comment-item__like.is-liked {
   color: var(--n24-accent);
+}
+
+.article-detail__related {
+  margin-top: var(--n24-space-7);
 }
 
 // --- footer -----------------------------------------------------------------
