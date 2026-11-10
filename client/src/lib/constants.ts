@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   readingHistory: 'news24h:reading-history',
   comments: 'news24h:comments',
   theme: 'news24h:theme',
+  readerFontScale: 'news24h:reader-font-scale',
 } as const;
 
 export const PAGE_SIZE = 20;
@@ -22,6 +23,26 @@ export const MAX_CACHED_CONTENTS = 50;
 
 /** Số bài gần nhất giữ trong lịch sử đọc. */
 export const MAX_READING_HISTORY = 50;
+
+/** Số bài liên quan hiển thị dưới nội dung bài viết. */
+export const RELATED_ARTICLES_COUNT = 6;
+
+/** Thời gian cache danh sách bài liên quan (ms). */
+export const RELATED_CACHE_TTL_MS = 60_000;
+
+/** Cỡ chữ trong phần nội dung bài viết — bước nhảy mỗi lần bấm A+/A-. */
+export const READER_FONT_SCALE_STEP = 0.1;
+export const READER_FONT_SCALE_MIN = 0.8;
+export const READER_FONT_SCALE_MAX = 1.6;
+
+/** Khoảng thời gian lọc lịch sử đã đọc (số ngày). */
+export const HISTORY_RANGE_DAYS = {
+  today: 1,
+  week: 7,
+  all: 0,
+} as const;
+
+export type HistoryRange = keyof typeof HISTORY_RANGE_DAYS;
 
 export const POLLING_INTERVAL_MS = 60000;
 
