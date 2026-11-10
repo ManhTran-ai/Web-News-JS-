@@ -6,6 +6,7 @@ import { articleContentReducer } from './slices/articleContentSlice';
 import { bookmarksReducer } from './slices/bookmarksSlice';
 import { authReducer } from './slices/authSlice';
 import { interactionReducer } from './slices/interactionSlice';
+import { relatedArticlesReducer } from './slices/relatedArticlesSlice';
 import { uiReducer } from './slices/uiSlice';
 
 export const rootReducer = {
@@ -16,6 +17,7 @@ export const rootReducer = {
   bookmarks: bookmarksReducer,
   auth: authReducer,
   interaction: interactionReducer,
+  related: relatedArticlesReducer,
   ui: uiReducer,
 };
 

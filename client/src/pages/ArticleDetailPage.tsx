@@ -1,17 +1,23 @@
-import { useEffect } from 'react';
-import { Container } from 'react-bootstrap';
+import { useEffect, useMemo } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchArticleById, selectArticleById } from '@/store/slices/articlesSlice';
 import { fetchArticleContent, selectContentEntry } from '@/store/slices/articleContentSlice';
+import { fetchRelatedArticles, selectRelatedEntry } from '@/store/slices/relatedArticlesSlice';
 import { recordRead } from '@/store/slices/interactionSlice';
 import { ArticleBody } from '@/components/article/ArticleBody';
 import { ArticleMeta } from '@/components/article/ArticleMeta';
-import { BookmarkButton } from '@/components/article/BookmarkButton';
+import { ArticleCard } from '@/components/article/ArticleCard';
+import { CommentSection } from '@/components/article/CommentSection';
+import { ReaderToolbar } from '@/components/article/ReaderToolbar';
 import { SafeImage } from '@/components/article/SafeImage';
 import { ArticleSkeleton } from '@/components/article/ArticleSkeleton';
 import { ErrorState } from '@/components/common/ErrorState';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { extractTextFromHtml } from '@/lib/html';
 import { formatDateTime } from '@/lib/time';
+import { RELATED_ARTICLES_COUNT } from '@/lib/constants';
 
 export function ArticleDetailPage() {
   const { id = '' } = useParams();
@@ -19,11 +25,13 @@ export function ArticleDetailPage() {
 
   const article = useAppSelector((state) => selectArticleById(state, id));
   const contentEntry = useAppSelector((state) => selectContentEntry(state, id));
+  const relatedEntry = useAppSelector((state) => selectRelatedEntry(state, id));
 
   useEffect(() => {
     if (!id) return;
     void dispatch(fetchArticleById(id));
     void dispatch(fetchArticleContent(id));
+    void dispatch(fetchRelatedArticles({ articleId: id, limit: RELATED_ARTICLES_COUNT }));
   }, [dispatch, id]);
 
   // Ghi vào lịch sử đọc ngay khi mở bài.
@@ -38,6 +46,11 @@ export function ArticleDetailPage() {
   const retry = (): void => {
     void dispatch(fetchArticleContent(id));
   };
+
+  const contentText = useMemo(
+    () => (contentEntry?.data ? extractTextFromHtml(contentEntry.data.contentHtml) : ''),
+    [contentEntry],
+  );
 
   const meta = article ? (
     <div className="article-detail__meta">
@@ -79,9 +92,7 @@ export function ArticleDetailPage() {
             />
           )}
 
-          <div className="article-detail__actions">
-            <BookmarkButton article={article} />
-          </div>
+          <ReaderToolbar article={article} contentText={contentText} />
 
           {contentUnavailable && (
             <div className="n24-tint article-detail__notice" role="alert">
@@ -122,6 +133,21 @@ export function ArticleDetailPage() {
               Mở bài gốc
             </a>
           </footer>
+
+          {relatedEntry && relatedEntry.items.length > 0 && (
+            <section className="article-detail__related n24-section">
+              <SectionHeader title="Bài liên quan" />
+              <Row className="g-3">
+                {relatedEntry.items.map((item) => (
+                  <Col xs={12} sm={6} lg={4} key={item.id}>
+                    <ArticleCard article={item} variant="standard" />
+                  </Col>
+                ))}
+              </Row>
+            </section>
+          )}
+
+          <CommentSection articleId={id} />
         </>
       ) : (
         <ErrorState

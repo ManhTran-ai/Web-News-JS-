@@ -12,7 +12,7 @@ hoặc một nhóm API đã sẵn sàng.
 
 ---
 
-## 0. Trạng thái hiện tại (cập nhật 08/11/2026)
+## 0. Trạng thái hiện tại (cập nhật 10/11/2026)
 
 ### 0.1. Đã hoàn thành
 
@@ -30,6 +30,11 @@ hoặc một nhóm API đã sẵn sàng.
 | **Ngân** | `AuthModal` — chuyển đổi đăng nhập / đăng ký + validate form | `c14334f` |
 | **Ngân** | `ArticleDetailPage` + `ArticleBody` — đọc bài trực tiếp trên web + `BookmarkButton` | `17b637e` |
 | **Ngân** | `SavedPage` — 2 tab đã lưu + lịch sử đã đọc | `d9975d3` |
+| **Ngân** | `CommentSection` — khoá khi chưa đăng nhập | `3e0c6c8` |
+| **Ngân** | `CommentSection` — switch ẩn danh / tên thật | `32091d3` |
+| **Ngân** | `ReaderToolbar` — A+/A- + bookmark + đọc bằng giọng nói | `eb0ad00` |
+| **Ngân** | `ArticleDetailPage` — tiện ích đọc + 6 bài liên quan + vùng bình luận | `2e2b3d5` |
+| **Ngân** | `SavedPage` — lọc theo chuyên mục + xoá lịch sử | `e5cb54f` |
 | **Ngân** | Fix `app.test.ts` — đổi kiểu sang `AppServer` + chuẩn hoá comment | `4846265` |
 | **Mạnh** | `api/http.ts` — ETag/304 + `ApiError` + đọc `X-Request-Id` | `62c6afe` |
 | **Mạnh** | `api/endpoints.ts` — `getArticles` (lọc kết hợp) + `getRSS` | `01c1c06` |
@@ -39,20 +44,21 @@ hoặc một nhóm API đã sẵn sàng.
 | **Mạnh** | `CategoryPage` — lọc theo nguồn + phân trang | `b2179df` |
 | **Mạnh** | `SearchPage` — tìm kiếm debounce 400ms + lọc kết hợp | `74e4f56` |
 
-**Tổng: 20 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
-`ManhTran-ai` (41), `23130205-dev` (11), `levantai` (9), `Trần Thị Thanh Ngân` (1).
+**Tổng: 25 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
+`ManhTran-ai` (41), `23130205-dev` (16), `levantai` (9), `Trần Thị Thanh Ngân` (1).
 > 4 dòng này là do **tên tác giả** khác nhau trong lịch sử. GitHub Insights gộp theo
 > email → hiển thị 3 tài khoản; `git shortlog` gộp theo **tên** → hiển thị 4 dòng.
 > Muốn shortlog khớp Insights thì thêm file `.mailmap` ở thư mục gốc repo.
+>
+> 5 commit tuần 3 của Ngân (`3e0c6c8` → `e5cb54f`) đều dùng đúng nick
+> `23130205-dev <23130205@st.hcmuaf.edu.vn>`. Riêng `a79ddc5` (tuần 3 #1) được
+> commit từ nhánh của Mạnh nên vẫn mang author `ManhTran-ai`.
 
 ### 0.2. Chưa làm — ưu tiên cao
 
 | Người | Việc còn lại | Vì sao gấp |
 |---|---|---|
-| **Ngân** | `CommentSection.tsx` — chưa tồn tại | Yêu cầu 5 (bình luận tên thật / ẩn danh) |
-| **Ngân** | `ReaderToolbar.tsx` — chưa tồn tại | Yêu cầu 6 (A+/A-, TTS) |
-| **Ngân** | `ArticleDetailPage` chưa render 6 bài liên quan (`/api/articles/:id/related`) | Yêu cầu phân công mục III |
-| **Mạnh** | `articlesSlice` chưa cache `related:<id>` (tuần 3 #1) | Yêu cầu 4 |
+| **Mạnh** | `articlesSlice` chưa cache `related:<id>` (tuần 3 #1) | Yêu cầu 4 — Ngân đã tạo `relatedArticlesSlice.ts` riêng, Mạnh vẫn nên cache trong `articlesSlice` |
 | **Tài** | `router.tsx` chưa lazy-load, chưa có `ScrollRestoration` | Yêu cầu phân công |
 | **Tài** | `AppFooter` chưa hoàn thiện | Yêu cầu phân công |
 
@@ -275,6 +281,9 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 ## 4. TUẦN 3 — 09/11 → 15/11 — "Tương tác người dùng"
 
+> **Trạng thái tuần 3 (10/11/2026): Ngân đã xong đủ 7/7 commit.**
+> Mạnh 0/6, Tài 4/5. Commit của Ngân nằm trên nhánh `Ngan`.
+
 ### 🔵 MẠNH (6 commit)
 
 | # | Commit | Nội dung | File | Trạng thái |
@@ -302,11 +311,16 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 |---|---|---|---|---|
 | 1 | `feat(client): interactionSlice - luu comment theo articleId + lich su doc` | Dùng slice có sẵn: `comments: Record<string, Comment[]>`, `readingHistory`; thêm / xoá / thả tim | `store/slices/interactionSlice.ts` | ✅ xong (`a79ddc5`) |
 | 2 | `feat(client): AuthModal - chuyen doi dang nhap / dang ky + validate form` | Modal 2 tab, validate email/mật khẩu, báo lỗi theo field, quản lý focus | `components/common/AuthModal.tsx` | ✅ xong (`c14334f`) |
-| 3 | `feat(client): CommentSection - khoa khi chua dang nhap` | Chưa đăng nhập → hiện "Vui lòng đăng nhập để bình luận" kèm nút mở AuthModal | `components/article/CommentSection.tsx` | ⬜ **chưa tạo file** |
-| 4 | `feat(client): CommentSection - switch an danh / ten that` | Tắt → hiện `user.fullName` + `avatar`; Bật → hiện "Người dùng ẩn danh" nhưng vẫn gắn `userId` ngầm để chủ xoá được bình luận mình | `components/article/CommentSection.tsx` | ⬜ **chưa tạo file** |
-| 5 | `feat(client): ReaderToolbar - A+/A- + bookmark + doc bang giong noi` | Tăng/giảm cỡ chữ, nút lưu bài, `window.speechSynthesis` đọc tiếng Việt kèm nút dừng | `components/article/ReaderToolbar.tsx` | ⬜ **chưa tạo file** |
-| 6 | `feat(client): ArticleDetailPage - tien ich doc + them vao lich su` | Gắn ReaderToolbar đầu bài, tự `recordRead` khi mở bài, render **6 bài liên quan cùng chuyên mục** từ `/api/articles/:id/related`, vùng bình luận ở cuối trang | `pages/ArticleDetailPage.tsx` | ⬜ mới có `BookmarkButton`; thiếu ReaderToolbar + related + comment |
-| 7 | `feat(client): SavedPage - loc theo chuyen muc + xoa lich su` | Lọc lịch sử theo khoảng thời gian, xoá 1 mục / xoá tất cả, empty state | `pages/SavedPage.tsx` | ⬜ |
+| 3 | `feat(client): CommentSection - khoa khi chua dang nhap` | Chưa đăng nhập → hiện "Vui lòng đăng nhập để bình luận" kèm nút mở AuthModal | `components/article/CommentSection.tsx` | ✅ xong (`3e0c6c8`) |
+| 4 | `feat(client): CommentSection - switch an danh / ten that` | Tắt → hiện `user.fullName` + `avatar`; Bật → hiện "Người dùng ẩn danh" nhưng vẫn gắn `userId` ngầm để chủ xoá được bình luận mình | `components/article/CommentSection.tsx` | ✅ xong (`32091d3`) |
+| 5 | `feat(client): ReaderToolbar - A+/A- + bookmark + doc bang giong noi` | Tăng/giảm cỡ chữ, nút lưu bài, `window.speechSynthesis` đọc tiếng Việt kèm nút dừng | `components/article/ReaderToolbar.tsx` | ✅ xong (`eb0ad00`) |
+| 6 | `feat(client): ArticleDetailPage - tien ich doc + them vao lich su` | Gắn ReaderToolbar đầu bài, tự `recordRead` khi mở bài, render **6 bài liên quan cùng chuyên mục** từ `/api/articles/:id/related`, vùng bình luận ở cuối trang | `pages/ArticleDetailPage.tsx` | ✅ xong (`2e2b3d5`) |
+| 7 | `feat(client): SavedPage - loc theo chuyen muc + xoa lich su` | Lọc lịch sử theo khoảng thời gian, xoá 1 mục / xoá tất cả, empty state | `pages/SavedPage.tsx` | ✅ xong (`e5cb54f`) |
+
+> **Tổng tuần 3 của Ngân: 7/7 commit.** Commit #1 (`a79ddc5`) và #2 (`c14334f`) đã có sẵn
+> từ trước; #3–#7 nằm trên nhánh `Ngan` (5 commit mới).
+> Bài liên quan dùng `relatedArticlesSlice.ts` (slice riêng) thay vì nhét vào
+> `articlesSlice.ts` — file đó thuộc Mạnh tuần 3 #1, tránh tranh chấp cùng một file.
 
 ---
 
@@ -352,8 +366,8 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 |---|---|---|---|---|---|
 | **Mạnh** | 7 | 6 | 6 | **19** | 8 / 19 |
 | **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
-| **Ngân** | 5 | 7 | 6 | **18** | 8 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 31 / 53 |
+| **Ngân** | 5 | 7 | 6 | **18** | 13 / 18 |
+| **Tổng** | 18 | 18 | 17 | **53** | 36 / 53 |
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
@@ -361,10 +375,14 @@ Tuần 2 đã đóng lại với đủ 7 commit của Mạnh. Sang tuần 3, n�
 **Ngân** (2 file chưa tồn tại: `CommentSection.tsx`, `ReaderToolbar.tsx` — là 2 yêu cầu trực
 tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên quan cao").
 
+> Cập nhật 10/11: phần của Ngân trong bảng dưới đã **xong đủ 7/7 commit**. Việc còn lại
+> của tuần 3 thuộc về **Mạnh** (cache `related:<id>` trong `articlesSlice`, badge "liên
+> quan cao", `usePolling` backoff) và **Tài** (`router.tsx` lazy-load).
+
 | Thứ tự | Người | Việc | Commit dự kiến |
 |---|---|---|---|
-| 1 | **Ngân** | `CommentSection.tsx` (khoá + switch ẩn danh) | #3, #4 tuần 3 → 2 commit |
-| 2 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit |
+| 1 | **Ngân** | `CommentSection.tsx` (khoá + switch ẩn danh) | #3, #4 tuần 3 → 2 commit — ✅ xong (`3e0c6c8`, `32091d3`) |
+| 2 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit — ✅ xong (`eb0ad00`) |
 | 3 | **Mạnh** | `articlesSlice` cache `related:<id>` + gọi `getRSS` | #1 tuần 3 → 1 commit |
 | 4 | **Mạnh** | Badge "liên quan cao" cho 3 kết quả đầu khi có `q` | #2 tuần 3 → 1 commit |
 | 5 | **Tài** | `router.tsx` lazy-load + `ScrollRestoration` | #5 tuần 3 → 1 commit |
@@ -395,7 +413,7 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 |---|---|---|---|
 | 1, 2, 3 — RSS, nội dung đầy đủ, không cần Extension | Ngân (+ Mạnh) | Ngân #4 + #1 tuần 2 | ✅ xong (`17b637e`, `180df90`) |
 | 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ✅ xong (`b23a27f`, `62c6afe`) |
-| 5, 6 — Đăng nhập, bình luận ẩn danh, tiện ích đọc | Ngân (+ Tài) | Ngân #2–#5 tuần 3, Ngân #3 tuần 4 | ⬜ auth ✅, bình luận + Reader ⬜ |
+| 5, 6 — Đăng nhập, bình luận ẩn danh, tiện ích đọc | Ngân (+ Tài) | Ngân #2–#5 tuần 3, Ngân #3 tuần 4 | ✅ xong (`c14334f`, `3e0c6c8`, `32091d3`, `eb0ad00`) — còn nâng cấp TTS ở tuần 4 |
 | Giao diện báo điện tử, dark mode, trang chủ | Tài | Tài #1–#6 tuần 2, Tài #4 tuần 3 | ✅ xong |
 | Chuyên mục / tìm kiếm / phân trang | Mạnh | Mạnh #6, #7 tuần 2 | ✅ xong (`16a8239`, `b2179df`, `74e4f56`) |
 
@@ -429,16 +447,17 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | Ngân | `store/slices/bookmarksSlice.ts` + `lib/storage.ts` | Ngân #2 tuần 2 | ✅ xong (`cee6c94`) |
 | Ngân | `store/slices/authSlice.ts` | Ngân #3 tuần 2 | ✅ xong (`c14334f`) |
 | Ngân | `store/slices/commentsSlice.ts` | Ngân #1 tuần 3 (dùng `interactionSlice.ts` — xem rủi ro #1) | ✅ đã hoà giải (`a79ddc5`) |
-| Ngân | `pages/ArticleDetailPage.tsx` | Ngân #4 tuần 2, #6 tuần 3 | ✅ xong (`17b637e`) |
+| Ngân | `pages/ArticleDetailPage.tsx` | Ngân #4 tuần 2, #6 tuần 3 | ✅ xong (`17b637e`, `2e2b3d5`) |
 | Ngân | `components/article/ArticleBody.tsx` | Ngân #4 tuần 2 | ✅ xong (`17b637e`) |
-| Ngân | `components/article/ReaderToolbar.tsx` | Ngân #5 tuần 3, #3 tuần 4 | ⬜ **chưa tạo file** |
+| Ngân | `components/article/ReaderToolbar.tsx` | Ngân #5 tuần 3, #3 tuần 4 | ✅ xong (`eb0ad00`) — tuần 4 #3 sẽ nâng cấp: chọn voice, xử lý trình duyệt không hỗ trợ |
 | Ngân | `components/common/AuthModal.tsx` | Ngân #2 tuần 3 | ✅ xong (`c14334f`) |
-| Ngân | `components/article/CommentSection.tsx` | Ngân #3, #4 tuần 3 | ⬜ **chưa tạo file** |
-| Ngân | `pages/SavedPage.tsx` | Ngân #5 tuần 2, #7 tuần 3, #2 + #4 tuần 4 | ✅ xong (`d9975d3`) |
+| Ngân | `components/article/CommentSection.tsx` | Ngân #3, #4 tuần 3 | ✅ xong (`3e0c6c8`, `32091d3`) |
+| Ngân | `pages/SavedPage.tsx` | Ngân #5 tuần 2, #7 tuần 3, #2 + #4 tuần 4 | ✅ xong (`d9975d3`, `e5cb54f`) |
+| Ngân | `store/slices/relatedArticlesSlice.ts` | Ngân #6 tuần 3 (slice riêng — không đụng `articlesSlice.ts` của Mạnh) | ✅ xong (`2e2b3d5`) |
 
-**Tổng: 31/32 file trong docx đã có commit bảo vệ. Chỉ còn `CommentSection.tsx` + `ReaderToolbar.tsx` chưa tạo.**
+**Tổng: 33/32 file trong docx đã có commit bảo vệ — đủ 100%, không còn file nào chưa tạo.**
 
-### 8.2. Bốn điểm cần nói rõ khi bảo vệ
+### 8.2. Năm điểm cần nói rõ khi bảo vệ
 
 1. **`contentsById` nằm ở `articleContentSlice` chứ không phải `articlesSlice`.** Docx mục I ghi
    `contentsById` trong `articlesSlice`; mục III lại giao `articleContentSlice.ts` cho Ngân.
@@ -452,3 +471,9 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 4. **Không có backend cho auth/comment.** `authSlice` + `interactionSlice` là state cục bộ
    (localStorage) — đúng như yêu cầu "không dùng database". Đây là điểm cần nói trước
    khi giảng viên hỏi "đăng nhập thật hay mô phỏng?".
+5. **Bài liên quan nằm ở `relatedArticlesSlice.ts` chứ không phải `articlesSlice.ts`.**
+   Docx giao cache `related:<id>` cho Mạnh (tuần 3 #1), còn Ngân làm phần render ở
+   `ArticleDetailPage` (tuần 3 #6). Hai người cùng sửa một file sẽ gây conflict, nên Ngân
+   tách slice riêng (`byId`, TTL 60s, `condition` chặn gọi lại API) — `articlesSlice.ts`
+   vẫn nguyên cho Mạnh làm tuần 3 #1. Hai cache cùng phục vụ `/api/articles/:id/related`
+   nhưng khác file, không đè lên nhau.
