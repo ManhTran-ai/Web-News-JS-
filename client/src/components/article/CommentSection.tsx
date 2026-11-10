@@ -24,6 +24,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   const comments = useAppSelector((state) => selectCommentsByArticle(state, articleId));
 
   const [content, setContent] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const sortedComments = useMemo(
@@ -40,10 +41,11 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     const comment: Comment = {
       id: `c_${Date.now().toString(36)}`,
       articleId,
+      // Ẩn danh vẫn gắn userId để chủ bình luận xoá được bình luận của mình.
       userId: user.id,
-      user,
+      user: isAnonymous ? undefined : user,
       content: trimmed,
-      isAnonymous: false,
+      isAnonymous,
       createdAt: new Date().toISOString(),
       likes: 0,
     };
@@ -106,11 +108,25 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           />
         </Form.Group>
 
-        <div className="text-end">
+        <div className="comment-form__footer">
+          <Form.Check
+            type="switch"
+            id="comment-anonymous"
+            label="Ẩn danh"
+            checked={isAnonymous}
+            onChange={(event) => setIsAnonymous(event.target.checked)}
+          />
+
           <Button type="submit" variant="dark" size="sm" disabled={!content.trim()}>
             Gửi bình luận
           </Button>
         </div>
+
+        <p className="article-card__summary mt-2 mb-0">
+          {isAnonymous
+            ? 'Bình luận sẽ hiển thị với tên "Người dùng ẩn danh".'
+            : `Bình luận sẽ hiển thị với tên "${user.fullName}".`}
+        </p>
       </Form>
 
       {sortedComments.length === 0 ? (
@@ -151,7 +167,7 @@ interface CommentItemProps {
 }
 
 function CommentItem({ comment, currentUserId, onLike, onRemove }: CommentItemProps) {
-  const authorName = comment.user?.fullName ?? 'Người dùng';
+  const authorName = comment.isAnonymous ? 'Người dùng ẩn danh' : (comment.user?.fullName ?? 'Người dùng');
   const isOwner = currentUserId !== null && comment.userId === currentUserId;
   const liked = (comment.likes ?? 0) > 0;
 
