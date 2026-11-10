@@ -35,6 +35,15 @@ export const READER_FONT_SCALE_STEP = 0.1;
 export const READER_FONT_SCALE_MIN = 0.8;
 export const READER_FONT_SCALE_MAX = 1.6;
 
+/** Khoảng thời gian lọc lịch sử đã đọc (số ngày). */
+export const HISTORY_RANGE_DAYS = {
+  today: 1,
+  week: 7,
+  all: 0,
+} as const;
+
+export type HistoryRange = keyof typeof HISTORY_RANGE_DAYS;
+
 export const POLLING_INTERVAL_MS = 60000;
 
 export const DEFAULT_SOURCES = [

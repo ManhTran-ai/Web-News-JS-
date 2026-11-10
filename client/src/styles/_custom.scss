@@ -773,6 +773,21 @@ a:hover {
   margin-top: var(--n24-space-7);
 }
 
+// --- bộ lọc trang đã lưu ----------------------------------------------------
+
+.saved-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--n24-space-3);
+}
+
+.saved-filters__group {
+  display: flex;
+  align-items: center;
+  gap: var(--n24-space-2);
+}
+
 // --- footer -----------------------------------------------------------------
 
 .app-footer {
