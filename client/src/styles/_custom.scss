@@ -667,6 +667,72 @@ a:hover {
   border-top: 1px solid var(--n24-border);
 }
 
+// --- bình luận ---------------------------------------------------------------
+
+.comment-section {
+  margin-top: var(--n24-space-7);
+  padding-top: var(--n24-space-6);
+  border-top: 1px solid var(--n24-border);
+}
+
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.comment-item {
+  padding: var(--n24-space-4) 0;
+  border-bottom: 1px solid var(--n24-border);
+}
+
+.comment-item:last-child {
+  border-bottom: 0;
+}
+
+.comment-item__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--n24-space-3);
+  margin-bottom: var(--n24-space-2);
+}
+
+.comment-item__author {
+  font-size: var(--n24-fs-label);
+  font-weight: 600;
+  color: var(--n24-text);
+}
+
+.comment-item__head time {
+  font-size: var(--n24-fs-meta);
+  color: var(--n24-faint);
+}
+
+.comment-item__content {
+  margin: 0 0 var(--n24-space-2);
+  font-size: var(--n24-fs-body);
+  line-height: 1.6;
+  color: var(--n24-text);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.comment-item__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--n24-space-2);
+}
+
+.comment-item__like {
+  padding-left: 0;
+  color: var(--n24-muted);
+  text-decoration: none;
+}
+
+.comment-item__like.is-liked {
+  color: var(--n24-accent);
+}
+
 // --- footer -----------------------------------------------------------------
 
 .app-footer {
