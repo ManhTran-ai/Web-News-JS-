@@ -10,10 +10,18 @@ import {
   getArticles,
   getFeatured,
   getLatest,
+  getRelated,
+  getRSS,
   searchArticles as searchArticlesApi,
 } from '@/api/endpoints';
 import { toApiError } from '@/api/http';
-import { LATEST_CACHE_TTL_MS, LIST_CACHE_TTL_MS } from '@/lib/constants';
+import { parseRssItems, type RssItem } from '@/lib/rss';
+import {
+  LATEST_CACHE_TTL_MS,
+  LIST_CACHE_TTL_MS,
+  RELATED_ARTICLES_COUNT,
+  RELATED_CACHE_TTL_MS,
+} from '@/lib/constants';
 import type { Article, ListMeta, RequestStatus } from '@/types/article';
 import type { RootState } from '../index';
 
@@ -27,8 +35,17 @@ interface ListEntry {
   lastFetched: number | null;
 }
 
+interface RssEntry {
+  items: RssItem[];
+  status: RequestStatus;
+  error: string | null;
+  lastFetched: number | null;
+}
+
 interface ArticlesState extends EntityState<Article, string> {
   lists: Record<string, ListEntry>;
+  /** Cache RSS theo chuyên mục — key `rss:<category>` hoặc `rss:all`. */
+  rssFeeds: Record<string, RssEntry>;
 }
 
 const articlesAdapter = createEntityAdapter<Article>();
@@ -41,12 +58,30 @@ const emptyEntry: ListEntry = {
   lastFetched: null,
 };
 
+const emptyRssEntry: RssEntry = {
+  items: [],
+  status: 'idle',
+  error: null,
+  lastFetched: null,
+};
+
 const initialState: ArticlesState = articlesAdapter.getInitialState({
   lists: {},
+  rssFeeds: {},
 });
 
 export const LIST_LATEST = 'latest';
 export const LIST_FEATURED = 'featured';
+
+/** Key cache cho danh sách bài liên quan của một bài viết. */
+export function listKeyRelated(articleId: string): string {
+  return `related:${articleId}`;
+}
+
+/** Key cache cho feed RSS — `rss:all` khi không lọc chuyên mục. */
+export function listKeyRss(category?: string): string {
+  return `rss:${category ?? 'all'}`;
+}
 
 export interface ArticleQuery {
   category?: string;
@@ -94,13 +129,22 @@ export function listKeyQuery(query: ArticleQuery): string {
 }
 
 /**
- * Kiểm tra cache còn hiệu lực không.
+ * Kiểm tra cache danh sách còn hiệu lực không.
  * - Chưa có → cần gọi API.
  * - Đang tải → có request trước đang chạy, không gọi lại.
  * - Vừa tải xong (trong TTL) → dùng cache, không gọi lại.
  */
 function isCacheFresh(state: RootState, key: string, ttl: number): boolean {
   const entry = state.articles.lists[key];
+  if (!entry) return false;
+  if (entry.status === 'loading') return true;
+  if (entry.lastFetched === null) return false;
+  return Date.now() - entry.lastFetched < ttl;
+}
+
+/** Tương tự `isCacheFresh` nhưng cho cache feed RSS. */
+function isRssCacheFresh(state: RootState, key: string, ttl: number): boolean {
+  const entry = state.articles.rssFeeds[key];
   if (!entry) return false;
   if (entry.status === 'loading') return true;
   if (entry.lastFetched === null) return false;
@@ -219,6 +263,49 @@ export const fetchArticleById = createAsyncThunk('articles/fetchById', async (id
   return getArticleById(id);
 });
 
+/**
+ * Bài liên quan của một bài viết — server trả sẵn các bài cùng chuyên mục.
+ * Cache theo `related:<id>` để mở lại bài đã đọc không phải gọi lại API.
+ */
+export const fetchRelated = createAsyncThunk<
+  Awaited<ReturnType<typeof getRelated>>,
+  { id: string; limit?: number },
+  ThunkConfig
+>(
+  'articles/fetchRelated',
+  async (params) => {
+    return getRelated(params.id, params.limit ?? RELATED_ARTICLES_COUNT);
+  },
+  {
+    condition: (params, { getState }) =>
+      !isCacheFresh(
+        getState(),
+        listKeyRelated(params.id),
+        RELATED_CACHE_TTL_MS,
+      ),
+  },
+);
+
+/**
+ * Feed RSS của server (`/api/articles/rss.xml`) — parse sẵn ra danh sách mục
+ * để trang chuyên mục hiển thị được nguồn RSS mà giảng viên yêu cầu.
+ */
+export const fetchRSS = createAsyncThunk<
+  RssItem[],
+  { category?: string; limit?: number },
+  ThunkConfig
+>(
+  'articles/fetchRSS',
+  async (params) => {
+    const xml = await getRSS(params.category, params.limit ?? 20);
+    return parseRssItems(xml);
+  },
+  {
+    condition: (params, { getState }) =>
+      !isRssCacheFresh(getState(), listKeyRss(params.category), LIST_CACHE_TTL_MS),
+  },
+);
+
 function setLoading(state: ArticlesState, key: string): void {
   const entry = (state.lists[key] ??= { ...emptyEntry });
   entry.status = 'loading';
@@ -331,6 +418,37 @@ const articlesSlice = createSlice({
 
       .addCase(fetchArticleById.fulfilled, (state, action) => {
         articlesAdapter.upsertOne(state, action.payload);
+      })
+
+      .addCase(fetchRelated.pending, (state, action) => {
+        setLoading(state, listKeyRelated(action.meta.arg.id));
+      })
+      .addCase(fetchRelated.fulfilled, (state, action) => {
+        setSucceeded(state, listKeyRelated(action.meta.arg.id), action.payload);
+      })
+      .addCase(fetchRelated.rejected, (state, action) => {
+        setFailed(state, listKeyRelated(action.meta.arg.id), action.error);
+      })
+
+      .addCase(fetchRSS.pending, (state, action) => {
+        const key = listKeyRss(action.meta.arg.category);
+        const entry = (state.rssFeeds[key] ??= { ...emptyRssEntry });
+        entry.status = 'loading';
+        entry.error = null;
+      })
+      .addCase(fetchRSS.fulfilled, (state, action) => {
+        const key = listKeyRss(action.meta.arg.category);
+        const entry = (state.rssFeeds[key] ??= { ...emptyRssEntry });
+        entry.status = 'succeeded';
+        entry.items = action.payload;
+        entry.error = null;
+        entry.lastFetched = Date.now();
+      })
+      .addCase(fetchRSS.rejected, (state, action) => {
+        const key = listKeyRss(action.meta.arg.category);
+        const entry = (state.rssFeeds[key] ??= { ...emptyRssEntry });
+        entry.status = 'failed';
+        entry.error = toApiError(action.error).message;
       });
   },
 });
@@ -353,5 +471,24 @@ export const selectArticleById = (state: RootState, id: string): Article | undef
 
 export const selectListMeta = (state: RootState, key: string): ListMeta | null =>
   state.articles.lists[key]?.meta ?? null;
+
+/** Id các bài liên quan đã cache theo `related:<id>`. */
+export const selectRelatedIds = (state: RootState, articleId: string): string[] =>
+  state.articles.lists[listKeyRelated(articleId)]?.ids ?? EMPTY_IDS;
+
+/** Bài liên quan đã cache — dựng lại từ entity adapter của `articlesSlice`. */
+export const selectCachedRelatedArticles = (state: RootState, articleId: string): Article[] => {
+  const ids = selectRelatedIds(state, articleId);
+  const entities = state.articles.entities;
+  return ids
+    .map((id) => entities[id])
+    .filter((article): article is Article => article !== undefined);
+};
+
+export const selectRssEntry = (state: RootState, category?: string): RssEntry =>
+  state.articles.rssFeeds[listKeyRss(category)] ?? emptyRssEntry;
+
+export const selectRssItems = (state: RootState, category?: string): RssItem[] =>
+  selectRssEntry(state, category).items;
 
 export { selectArticlesEntities };

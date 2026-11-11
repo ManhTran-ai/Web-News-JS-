@@ -2,7 +2,12 @@ import { useEffect } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchByCategory, listKeyCategory } from '@/store/slices/articlesSlice';
+import {
+  fetchByCategory,
+  fetchRSS,
+  listKeyCategory,
+  selectRssEntry,
+} from '@/store/slices/articlesSlice';
 import { selectCategories } from '@/store/slices/categoriesSlice';
 import { selectSources } from '@/store/slices/sourcesSlice';
 import { useListArticles } from '@/hooks/useListArticles';
@@ -20,6 +25,7 @@ export function CategoryPage() {
 
   const categories = useAppSelector(selectCategories);
   const sources = useAppSelector(selectSources);
+  const rss = useAppSelector((state) => selectRssEntry(state, slug));
 
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
   const source = searchParams.get('source') ?? '';
@@ -34,6 +40,11 @@ export function CategoryPage() {
       fetchByCategory({ category: slug, source: source || undefined, page, limit: PAGE_SIZE }),
     );
   }, [dispatch, slug, source, page]);
+
+  useEffect(() => {
+    if (!slug) return;
+    void dispatch(fetchRSS({ category: slug, limit: PAGE_SIZE }));
+  }, [dispatch, slug]);
 
   const retry = (): void => {
     void dispatch(
@@ -128,6 +139,31 @@ export function CategoryPage() {
           label={`Xem trang ${page + 1} / ${totalPages}`}
         />
       )}
+
+      <section className="n24-section mt-5">
+        <h2 className="h5 mb-2">Nguồn RSS của chuyên mục</h2>
+        {rss.status === 'succeeded' && rss.items.length > 0 && (
+          <ul className="list-unstyled mb-0">
+            {rss.items.slice(0, 5).map((item) => (
+              <li key={item.link || item.title} className="mb-1">
+                <a href={item.link} target="_blank" rel="noopener noreferrer">
+                  {item.title}
+                </a>
+                {item.source && <span className="text-secondary"> · {item.source}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {rss.status === 'loading' && <p className="text-secondary mb-0">Đang tải feed RSS...</p>}
+        {rss.status === 'failed' && (
+          <p className="text-secondary mb-0">
+            Không tải được feed RSS: {rss.error ?? 'không rõ nguyên nhân'}
+          </p>
+        )}
+        {rss.status === 'succeeded' && rss.items.length === 0 && (
+          <p className="text-secondary mb-0">Feed RSS hiện chưa có bài viết nào.</p>
+        )}
+      </section>
     </Container>
   );
 }
