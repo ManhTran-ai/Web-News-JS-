@@ -18,6 +18,9 @@ export const LIST_CACHE_TTL_MS = 60_000;
 /** Cache cho danh sách "mới nhất" — ngắn hơn vì được polling 60s/lần. */
 export const LATEST_CACHE_TTL_MS = 30_000;
 
+/** Thời gian chờ (ms) trước khi gọi API tìm kiếm — tránh gọi API cho mỗi ký tự gõ. */
+export const SEARCH_DEBOUNCE_MS = 400;
+
 /** Số nội dung bài viết tối đa được giữ trong RAM của Redux. */
 export const MAX_CACHED_CONTENTS = 50;
 
@@ -26,6 +29,13 @@ export const MAX_READING_HISTORY = 50;
 
 /** Số bài liên quan hiển thị dưới nội dung bài viết. */
 export const RELATED_ARTICLES_COUNT = 6;
+
+/**
+ * Số kết quả đầu được gắn badge "liên quan cao" khi tìm kiếm.
+ * Server đã sort theo score nhưng không trả field `score` ra API,
+ * nên client tự đánh dấu theo thứ tự kết quả trả về.
+ */
+export const HIGH_RELEVANCE_COUNT = 3;
 
 /** Thời gian cache danh sách bài liên quan (ms). */
 export const RELATED_CACHE_TTL_MS = 60_000;

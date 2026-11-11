@@ -55,9 +55,14 @@ export interface ArticleListParams {
 /**
  * Endpoint danh sách tổng hợp — hỗ trợ lọc theo chuyên mục, nguồn, từ khoá và khoảng thời gian.
  * Dùng cho màn hình tìm kiếm vì `/api/search` chỉ nhận `q`.
+ *
+ * `signal` cho phép huỷ request cũ khi người dùng gõ từ khoá mới.
  */
-export async function getArticles(params: ArticleListParams = {}): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/articles', { params });
+export async function getArticles(
+  params: ArticleListParams = {},
+  signal?: AbortSignal,
+): Promise<ApiList<Article>> {
+  const response = await http.get<ApiList<Article>>('/articles', { params, signal });
   return response.data;
 }
 
@@ -65,8 +70,12 @@ export async function searchArticles(
   q: string,
   limit = 20,
   page = 1,
+  signal?: AbortSignal,
 ): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/search', { params: { q, limit, page } });
+  const response = await http.get<ApiList<Article>>('/search', {
+    params: { q, limit, page },
+    signal,
+  });
   return response.data;
 }
 
