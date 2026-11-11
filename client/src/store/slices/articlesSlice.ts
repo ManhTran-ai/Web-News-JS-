@@ -17,6 +17,7 @@ import {
 import { toApiError } from '@/api/http';
 import { parseRssItems, type RssItem } from '@/lib/rss';
 import {
+  HIGH_RELEVANCE_COUNT,
   LATEST_CACHE_TTL_MS,
   LIST_CACHE_TTL_MS,
   RELATED_ARTICLES_COUNT,
@@ -33,6 +34,12 @@ interface ListEntry {
   error: string | null;
   meta: ListMeta | null;
   lastFetched: number | null;
+  /**
+   * Id các bài được gắn badge "liên quan cao".
+   * Server đã sort theo score khi có `q` nhưng không trả field `score` ra API,
+   * nên client tự đánh dấu theo thứ tự kết quả trả về.
+   */
+  highRelevanceIds: string[];
 }
 
 interface RssEntry {
@@ -56,6 +63,7 @@ const emptyEntry: ListEntry = {
   error: null,
   meta: null,
   lastFetched: null,
+  highRelevanceIds: [],
 };
 
 const emptyRssEntry: RssEntry = {
@@ -312,13 +320,21 @@ function setLoading(state: ArticlesState, key: string): void {
   entry.error = null;
 }
 
-function setSucceeded(state: ArticlesState, key: string, payload: { data: Article[]; meta: ListMeta }): void {
+function setSucceeded(
+  state: ArticlesState,
+  key: string,
+  payload: { data: Article[]; meta: ListMeta },
+  options: { markHighRelevance?: boolean } = {},
+): void {
   const entry = (state.lists[key] ??= { ...emptyEntry });
   entry.status = 'succeeded';
   articlesAdapter.upsertMany(state, payload.data);
   entry.ids = payload.data.map((a) => a.id);
   entry.meta = payload.meta;
   entry.lastFetched = Date.now();
+  entry.highRelevanceIds = options.markHighRelevance
+    ? payload.data.slice(0, HIGH_RELEVANCE_COUNT).map((a) => a.id)
+    : [];
 }
 
 function setFailed(state: ArticlesState, key: string, error: unknown): void {
@@ -396,6 +412,8 @@ const articlesSlice = createSlice({
           state,
           listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }),
           action.payload,
+          // Chỉ trang đầu mới chứa 3 kết quả liên quan cao nhất.
+          { markHighRelevance: (action.meta.arg.page ?? 1) === 1 },
         );
       })
       .addCase(searchArticles.rejected, (state, action) => {
@@ -410,7 +428,10 @@ const articlesSlice = createSlice({
         setLoading(state, listKeyQuery(action.meta.arg));
       })
       .addCase(queryArticles.fulfilled, (state, action) => {
-        setSucceeded(state, listKeyQuery(action.meta.arg), action.payload);
+        setSucceeded(state, listKeyQuery(action.meta.arg), action.payload, {
+          // Chỉ khi có từ khoá và ở trang đầu mới đánh dấu "liên quan cao".
+          markHighRelevance: Boolean(action.meta.arg.q) && (action.meta.arg.page ?? 1) === 1,
+        });
       })
       .addCase(queryArticles.rejected, (state, action) => {
         setFailed(state, listKeyQuery(action.meta.arg), action.error);
@@ -471,6 +492,10 @@ export const selectArticleById = (state: RootState, id: string): Article | undef
 
 export const selectListMeta = (state: RootState, key: string): ListMeta | null =>
   state.articles.lists[key]?.meta ?? null;
+
+/** Id các bài được gắn badge "liên quan cao" trong danh sách `key`. */
+export const selectHighRelevanceIds = (state: RootState, key: string): string[] =>
+  state.articles.lists[key]?.highRelevanceIds ?? EMPTY_IDS;
 
 /** Id các bài liên quan đã cache theo `related:<id>`. */
 export const selectRelatedIds = (state: RootState, articleId: string): string[] =>

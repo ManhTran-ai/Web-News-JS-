@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { listKeyQuery, queryArticles } from '@/store/slices/articlesSlice';
+import {
+  listKeyQuery,
+  queryArticles,
+  selectHighRelevanceIds,
+} from '@/store/slices/articlesSlice';
 import { selectCategories } from '@/store/slices/categoriesSlice';
 import { selectSources } from '@/store/slices/sourcesSlice';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -44,6 +48,7 @@ export function SearchPage() {
 
   const key = listKeyQuery(query);
   const { items, meta, isLoading, status, error } = useListArticles(key);
+  const highRelevanceIds = useAppSelector((state) => selectHighRelevanceIds(state, key));
 
   // Đồng bộ từ khoá trong URL với ô nhập (khi người dùng gõ trực tiếp trên trang).
   useEffect(() => {
@@ -182,7 +187,14 @@ export function SearchPage() {
         <Row className="g-3">
           {items.map((article) => (
             <Col xs={12} sm={6} lg={4} key={article.id}>
-              <ArticleCard article={article} variant="standard" />
+              <div className="position-relative">
+                {highRelevanceIds.includes(article.id) && (
+                  <span className="badge text-bg-warning position-absolute top-0 start-0 m-2">
+                    Liên quan cao
+                  </span>
+                )}
+                <ArticleCard article={article} variant="standard" />
+              </div>
             </Col>
           ))}
         </Row>
