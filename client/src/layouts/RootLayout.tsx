@@ -20,8 +20,13 @@ export function RootLayout() {
     void dispatch(fetchLatest(LATEST_LIMIT));
   }, [dispatch]);
 
-  usePolling(() => {
-    void dispatch(fetchLatest(LATEST_LIMIT));
+  usePolling(async () => {
+    const action = await dispatch(fetchLatest(LATEST_LIMIT));
+
+    // `condition` chặn gọi lại API khi cache còn hiệu lực → không phải lỗi.
+    if (fetchLatest.rejected.match(action) && action.meta.condition) return true;
+
+    return fetchLatest.fulfilled.match(action);
   }, POLLING_INTERVAL_MS);
 
   const tickerArticles = latest.slice(0, TICKER_COUNT);

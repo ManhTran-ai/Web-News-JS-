@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { getRelated } from '@/api/endpoints';
 import { toApiError } from '@/api/http';
-import { RELATED_ARTICLES_COUNT, RELATED_CACHE_TTL_MS } from '@/lib/constants';
+import { RELATED_CACHE_TTL_MS } from '@/lib/constants';
 import type { Article, RequestStatus } from '@/types/article';
+import { fetchRelated, selectCachedRelatedArticles } from './articlesSlice';
 import type { RootState } from '../index';
 
 interface RelatedEntry {
@@ -27,7 +27,9 @@ function isFresh(entry: RelatedEntry | undefined): boolean {
 
 /**
  * Bài liên quan tới một bài viết — server đã trả sẵn danh sách cùng chuyên mục.
- * Cache theo id để mở lại bài đã đọc không phải gọi lại API.
+ *
+ * Phần gọi API và cache `related:<id>` do `articlesSlice` đảm nhiệm (tuần 3 #1),
+ * slice này chỉ giữ trạng thái hiển thị nên không gọi trùng endpoint.
  */
 export const fetchRelatedArticles = createAsyncThunk<
   { articleId: string; items: Article[] },
@@ -35,9 +37,20 @@ export const fetchRelatedArticles = createAsyncThunk<
   { state: RootState }
 >(
   'related/fetch',
-  async ({ articleId, limit }) => {
-    const response = await getRelated(articleId, limit ?? RELATED_ARTICLES_COUNT);
-    return { articleId, items: response.data };
+  async ({ articleId, limit }, { dispatch, getState }) => {
+    const action = await dispatch(fetchRelated({ id: articleId, limit }));
+
+    if (fetchRelated.fulfilled.match(action)) {
+      return { articleId, items: action.payload.data };
+    }
+
+    // Bị skip vì cache `related:<id>` còn hiệu lực → đọc lại từ cache.
+    if (fetchRelated.rejected.match(action) && action.meta.condition) {
+      const items = selectCachedRelatedArticles(getState(), articleId);
+      if (items.length > 0) return { articleId, items };
+    }
+
+    throw action.error ?? new Error('Không tải được bài liên quan');
   },
   {
     condition: ({ articleId }, { getState }) => !isFresh(getState().related.byId[articleId]),
