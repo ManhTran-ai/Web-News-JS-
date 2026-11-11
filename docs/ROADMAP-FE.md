@@ -284,19 +284,19 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 ## 4. TUẦN 3 — 09/11 → 15/11 — "Tương tác người dùng"
 
-> **Trạng thái tuần 3 (10/11/2026): Ngân đã xong đủ 7/7 commit.**
-> Mạnh 0/6, Tài 4/5. Commit của Ngân nằm trên nhánh `Ngan`.
+> **Trạng thái tuần 3 (12/11/2026): Mạnh đã xong đủ 6/6 commit.**
+> Ngân đã xong 7/7, Tài 4/5. Commit của Mạnh nằm trên nhánh `ManhTran`.
 
 ### 🔵 MẠNH (6 commit)
 
 | # | Commit | Nội dung | File | Trạng thái |
 |---|---|---|---|---|
-| 1 | `feat(client): articlesSlice bo sung fetch related + rss.xml` | `getRelated(id, limit)` → cache `related:<id>`; `getRSS(category, limit)` | `store/slices/articlesSlice.ts`, `api/endpoints.ts` | ⬜ `getRelated` có trong endpoints, chưa có trong slice |
-| 2 | `feat(client): articlesSlice - danh dau bai lien quan cao theo thu tu ket qua` | Server đã sort sẵn theo score nhưng **không** trả field `score`; client tự gắn badge "liên quan cao" cho 3 kết quả đầu khi có `q` | `store/slices/articlesSlice.ts` | ⬜ |
-| 3 | `feat(client): hooks usePolling - tu lam moi theo coche so lai` | Backoff khi lỗi, dừng khi tab ẩn (`visibilitychange`), reset khi focus | `hooks/usePolling.ts` | ⬜ hiện chỉ có `setInterval` |
-| 4 | `feat(client): articlesSlice - debounce + huy request cu + giu lai tu khoa` | Hủy request cũ khi gõ tiếp, giữ `query` để chia sẻ được URL | `store/slices/articlesSlice.ts` | ⬜ |
-| 5 | `test(client): them unit test cho articlesSlice + hooks` | Test cache không gọi lại API, test debounce, test phân trang | `store/slices/articlesSlice.test.ts` | ⬜ chưa có file test này |
-| 6 | `test(client): test integration cho 3 trang lon` | Render CategoryIndex / Category / Search — dùng `vi.mock` của Vitest (repo **không** cài MSW) | `pages/*.test.tsx` | ⬜ |
+| 1 | `feat(client): articlesSlice bo sung fetch related + rss.xml` | `getRelated(id, limit)` → cache `related:<id>`; `getRSS(category, limit)` | `store/slices/articlesSlice.ts`, `api/endpoints.ts` | ✅ xong (`aea871d`) |
+| 2 | `feat(client): articlesSlice - danh dau bai lien quan cao theo thu tu ket qua` | Server đã sort sẵn theo score nhưng **không** trả field `score`; client tự gắn badge "liên quan cao" cho 3 kết quả đầu khi có `q` | `store/slices/articlesSlice.ts` | ✅ xong (`4592e76`) |
+| 3 | `feat(client): hooks usePolling - tu lam moi theo coque so lai` | Backoff khi lỗi, dừng khi tab ẩn (`visibilitychange`), reset khi focus | `hooks/usePolling.ts` | ✅ xong (`009bc02`) |
+| 4 | `feat(client): articlesSlice - debounce + huy request cu + giu lai tu khoa` | Hủy request cũ khi gõ tiếp, giữ `query` để chia sẻ được URL | `store/slices/articlesSlice.ts` | ✅ xong (`fdf6c85`) |
+| 5 | `test(client): them unit test cho articlesSlice + hooks` | Test cache không gọi lại API, test debounce, test phân trang | `store/slices/articlesSlice.test.ts` | ✅ xong (`f723035`) |
+| 6 | `test(client): test integration cho 3 trang lon` | Render CategoryIndex / Category / Search — dùng `vi.mock` của Vitest (repo **không** cài MSW) | `pages/*.test.tsx` | ✅ xong (`7004f8e`) |
 
 ### 🟢 TÀI (5 commit)
 
@@ -367,10 +367,10 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 | | Tuần 2 | Tuần 3 | Tuần 4 | Tổng | Đã xong |
 |---|---|---|---|---|---|
-| **Mạnh** | 7 | 6 | 6 | **19** | 8 / 19 |
+| **Mạnh** | 7 | 6 | 6 | **19** | 14 / 19 |
 | **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
 | **Ngân** | 5 | 7 | 6 | **18** | 13 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 36 / 53 |
+| **Tổng** | 18 | 18 | 17 | **53** | 42 / 53 |
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
@@ -381,13 +381,16 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 > Cập nhật 10/11: phần của Ngân trong bảng dưới đã **xong đủ 7/7 commit**. Việc còn lại
 > của tuần 3 thuộc về **Mạnh** (cache `related:<id>` trong `articlesSlice`, badge "liên
 > quan cao", `usePolling` backoff) và **Tài** (`router.tsx` lazy-load).
+>
+> Cập nhật 12/11: phần của **Mạnh đã xong đủ 6/6 commit** (nhánh `ManhTran`). Tuần 3
+> chỉ còn thiếu #5 của Tài (`router.tsx` lazy-load).
 
 | Thứ tự | Người | Việc | Commit dự kiến |
 |---|---|---|---|
 | 1 | **Ngân** | `CommentSection.tsx` (khoá + switch ẩn danh) | #3, #4 tuần 3 → 2 commit — ✅ xong (`e4f8fb0`, `dfeb611`) |
 | 2 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit — ✅ xong (`4ad1aa1`) |
-| 3 | **Mạnh** | `articlesSlice` cache `related:<id>` + gọi `getRSS` | #1 tuần 3 → 1 commit |
-| 4 | **Mạnh** | Badge "liên quan cao" cho 3 kết quả đầu khi có `q` | #2 tuần 3 → 1 commit |
+| 3 | **Mạnh** | `articlesSlice` cache `related:<id>` + gọi `getRSS` | #1 tuần 3 → 1 commit — ✅ xong (`aea871d`) |
+| 4 | **Mạnh** | Badge "liên quan cao" cho 3 kết quả đầu khi có `q` | #2 tuần 3 → 1 commit — ✅ xong (`4592e76`) |
 | 5 | **Tài** | `router.tsx` lazy-load + `ScrollRestoration` | #5 tuần 3 → 1 commit |
 
 ---
