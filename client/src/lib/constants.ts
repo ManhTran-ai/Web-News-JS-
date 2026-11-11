@@ -18,6 +18,9 @@ export const LIST_CACHE_TTL_MS = 60_000;
 /** Cache cho danh sách "mới nhất" — ngắn hơn vì được polling 60s/lần. */
 export const LATEST_CACHE_TTL_MS = 30_000;
 
+/** Thời gian chờ (ms) trước khi gọi API tìm kiếm — tránh gọi API cho mỗi ký tự gõ. */
+export const SEARCH_DEBOUNCE_MS = 400;
+
 /** Số nội dung bài viết tối đa được giữ trong RAM của Redux. */
 export const MAX_CACHED_CONTENTS = 50;
 
