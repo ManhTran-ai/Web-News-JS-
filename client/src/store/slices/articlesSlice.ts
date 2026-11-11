@@ -1,4 +1,5 @@
 import {
+  createAction,
   createAsyncThunk,
   createEntityAdapter,
   createSlice,
@@ -22,6 +23,7 @@ import {
   LIST_CACHE_TTL_MS,
   RELATED_ARTICLES_COUNT,
   RELATED_CACHE_TTL_MS,
+  SEARCH_DEBOUNCE_MS,
 } from '@/lib/constants';
 import type { Article, ListMeta, RequestStatus } from '@/types/article';
 import type { RootState } from '../index';
@@ -40,6 +42,8 @@ interface ListEntry {
    * nên client tự đánh dấu theo thứ tự kết quả trả về.
    */
   highRelevanceIds: string[];
+  /** Request đang chạy — dùng để biết lỗi huỷ có thuộc request này không. */
+  requestId?: string;
 }
 
 interface RssEntry {
@@ -53,6 +57,11 @@ interface ArticlesState extends EntityState<Article, string> {
   lists: Record<string, ListEntry>;
   /** Cache RSS theo chuyên mục — key `rss:<category>` hoặc `rss:all`. */
   rssFeeds: Record<string, RssEntry>;
+  /**
+   * Từ khoá đang tìm kiếm — `null` nghĩa là chưa có từ khoá nào được chốt.
+   * Chỉ cập nhật sau khi hết thời gian debounce nên URL không nhảy theo từng ký tự gõ.
+   */
+  activeQuery: string | null;
 }
 
 const articlesAdapter = createEntityAdapter<Article>();
@@ -76,6 +85,7 @@ const emptyRssEntry: RssEntry = {
 const initialState: ArticlesState = articlesAdapter.getInitialState({
   lists: {},
   rssFeeds: {},
+  activeQuery: null,
 });
 
 export const LIST_LATEST = 'latest';
@@ -159,6 +169,101 @@ function isRssCacheFresh(state: RootState, key: string, ttl: number): boolean {
   return Date.now() - entry.lastFetched < ttl;
 }
 
+/**
+ * Bộ huỷ request đang chạy theo "phạm vi" (scope).
+ *
+ * Khi người dùng gõ từ khoá mới, request cũ của cùng scope bị huỷ để không tốn
+ * băng thông và không ghi đè kết quả mới bằng kết quả cũ.
+ */
+const abortControllers = new Map<string, AbortController>();
+/** Huỷ request đang chạy của scope và trả về controller mới để dùng cho request kế tiếp. */
+function startRequest(scope: string): AbortController {
+  abortControllers.get(scope)?.abort();
+  const controller = new AbortController();
+  abortControllers.set(scope, controller);
+  return controller;
+}
+
+/** Bỏ controller khỏi registry nếu nó vẫn là controller đang chạy của scope. */
+function endRequest(scope: string, controller: AbortController): void {
+  if (abortControllers.get(scope) === controller) {
+    abortControllers.delete(scope);
+  }
+}
+
+/** Huỷ toàn bộ request đang chạy — dùng khi rời trang tìm kiếm. */
+export function abortAllRequests(): void {
+  for (const controller of abortControllers.values()) {
+    controller.abort();
+  }
+  abortControllers.clear();
+}
+
+/** Lỗi huỷ request của axios — không phải lỗi thật nên không hiển thị cho người dùng. */
+function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: string }).name === 'CanceledError'
+  );
+}
+
+/**
+ * Chờ trong khoảng `ms`, nhưng dừng sớm nếu signal bị huỷ.
+ * Dùng để debounce ở tầng thunk: request cũ bị huỷ trong lúc chờ nên không gọi API.
+ */
+function delay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject({ name: 'CanceledError' } as Error);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+
+    function onAbort(): void {
+      clearTimeout(timer);
+      reject({ name: 'CanceledError' } as Error);
+    }
+
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/**
+ * Số danh sách tìm kiếm được giữ lại trong RAM.
+ * Mỗi lần gõ một từ khoá mới sinh ra một cache key — giới hạn số lượng để
+ * không phình bộ nhớ (đáp ứng yêu cầu 4: Redux tối ưu bộ nhớ).
+ */
+const MAX_SEARCH_LISTS = 10;
+
+/** Xoá các cache tìm kiếm cũ nhất khi vượt quá `MAX_SEARCH_LISTS`. */
+function pruneSearchLists(state: ArticlesState): void {
+  // Không xoá entry đang tải — kết quả sẽ không còn nơi để ghi vào.
+  const candidates = Object.keys(state.lists).filter(
+    (key) => key.startsWith('query') && state.lists[key]?.status !== 'loading',
+  );
+  if (candidates.length <= MAX_SEARCH_LISTS) return;
+
+  const sorted = candidates
+    .map((key) => ({ key, lastFetched: state.lists[key]?.lastFetched ?? 0 }))
+    .sort((a, b) => a.lastFetched - b.lastFetched);
+
+  for (const { key } of sorted.slice(0, candidates.length - MAX_SEARCH_LISTS)) {
+    delete state.lists[key];
+  }
+}
+
+/**
+ * Chốt từ khoá tìm kiếm — dùng để đồng bộ URL (link chia sẻ được).
+ * Chỉ được gọi sau khi hết debounce nên URL không nhảy theo từng ký tự gõ.
+ */
+export const commitSearchKeyword = createAction<string>('articles/commitSearchKeyword');
+
 export const fetchLatest = createAsyncThunk<
   Awaited<ReturnType<typeof getLatest>>,
   number | undefined,
@@ -236,7 +341,23 @@ export const searchArticles = createAsyncThunk<
 >(
   'articles/search',
   async (params) => {
-    return searchArticlesApi(params.q, params.limit ?? 20, params.page ?? 1);
+    const controller = startRequest('search');
+    try {
+      // Debounce ở tầng thunk: request cũ bị huỷ trong lúc chờ nên không gọi API.
+      if ((params.page ?? 1) === 1) {
+        await delay(SEARCH_DEBOUNCE_MS, controller.signal);
+      }
+      return await searchArticlesApi(
+        params.q,
+        params.limit ?? 20,
+        params.page ?? 1,
+        controller.signal,
+      );
+    } catch (error) {
+      throw isAbortError(error) ? { name: 'CanceledError' } : error;
+    } finally {
+      endRequest('search', controller);
+    }
   },
   {
     condition: (params, { getState }) =>
@@ -251,6 +372,9 @@ export const searchArticles = createAsyncThunk<
 /**
  * Tìm kiếm có lọc kết hợp (chuyên mục + nguồn + từ khoá).
  * `/api/search` chỉ nhận `q` nên phải dùng `/api/articles`.
+ *
+ * - Debounce 400ms ở tầng thunk: gõ tiếp sẽ huỷ request cũ trước khi nó kịp gọi API.
+ * - Từ khoá chỉ được "chốt" (`activeQuery`) sau khi hết debounce — URL không nhảy theo từng ký tự.
  */
 export const queryArticles = createAsyncThunk<
   Awaited<ReturnType<typeof getArticles>>,
@@ -258,8 +382,21 @@ export const queryArticles = createAsyncThunk<
   ThunkConfig
 >(
   'articles/query',
-  async (query) => {
-    return getArticles({ page: 1, limit: 20, ...query });
+  async (query, { dispatch }) => {
+    const controller = startRequest('query');
+    try {
+      // Debounce ở tầng thunk: request cũ bị huỷ trong lúc chờ nên không gọi API.
+      if ((query.page ?? 1) === 1) {
+        await delay(SEARCH_DEBOUNCE_MS, controller.signal);
+        // Từ khoá chính thức được chấp nhận sau debounce.
+        dispatch(commitSearchKeyword(query.q ?? ''));
+      }
+      return await getArticles({ page: 1, limit: 20, ...query }, controller.signal);
+    } catch (error) {
+      throw isAbortError(error) ? { name: 'CanceledError' } : error;
+    } finally {
+      endRequest('query', controller);
+    }
   },
   {
     condition: (query, { getState }) =>
@@ -314,10 +451,11 @@ export const fetchRSS = createAsyncThunk<
   },
 );
 
-function setLoading(state: ArticlesState, key: string): void {
+function setLoading(state: ArticlesState, key: string, requestId?: string): void {
   const entry = (state.lists[key] ??= { ...emptyEntry });
   entry.status = 'loading';
   entry.error = null;
+  entry.requestId = requestId;
 }
 
 function setSucceeded(
@@ -332,6 +470,7 @@ function setSucceeded(
   entry.ids = payload.data.map((a) => a.id);
   entry.meta = payload.meta;
   entry.lastFetched = Date.now();
+  entry.requestId = undefined;
   entry.highRelevanceIds = options.markHighRelevance
     ? payload.data.slice(0, HIGH_RELEVANCE_COUNT).map((a) => a.id)
     : [];
@@ -341,6 +480,30 @@ function setFailed(state: ArticlesState, key: string, error: unknown): void {
   const entry = (state.lists[key] ??= { ...emptyEntry });
   entry.status = 'failed';
   entry.error = toApiError(error).message;
+  entry.requestId = undefined;
+}
+
+/**
+ * Xử lý lỗi huỷ request: request bị huỷ thì entry vẫn phải ở trạng thái chờ
+ * (để request mới ghi đè), nhưng entry của request đã bị huỷ thì về `idle`.
+ */
+function handleRejected(
+  state: ArticlesState,
+  key: string,
+  action: { error: { name?: string; message?: string }; meta: { requestId: string } },
+): void {
+  const entry = state.lists[key];
+
+  if (action.error.name === 'CanceledError') {
+    // Chỉ huỷ entry nếu request bị huỷ là request mới nhất của key này.
+    if (entry && entry.requestId === action.meta.requestId) {
+      entry.status = 'idle';
+      entry.requestId = undefined;
+    }
+    return;
+  }
+
+  setFailed(state, key, action.error);
 }
 
 const articlesSlice = createSlice({
@@ -353,6 +516,10 @@ const articlesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(commitSearchKeyword, (state, action) => {
+        state.activeQuery = action.payload || null;
+      })
+
       .addCase(fetchLatest.pending, (state) => {
         setLoading(state, LIST_LATEST);
       })
@@ -405,7 +572,11 @@ const articlesSlice = createSlice({
       })
 
       .addCase(searchArticles.pending, (state, action) => {
-        setLoading(state, listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }));
+        setLoading(
+          state,
+          listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }),
+          action.meta.requestId,
+        );
       })
       .addCase(searchArticles.fulfilled, (state, action) => {
         setSucceeded(
@@ -417,15 +588,17 @@ const articlesSlice = createSlice({
         );
       })
       .addCase(searchArticles.rejected, (state, action) => {
-        setFailed(
+        handleRejected(
           state,
           listKeySearch(action.meta.arg.q, { page: action.meta.arg.page }),
-          action.error,
+          action,
         );
       })
 
       .addCase(queryArticles.pending, (state, action) => {
-        setLoading(state, listKeyQuery(action.meta.arg));
+        setLoading(state, listKeyQuery(action.meta.arg), action.meta.requestId);
+        // Mỗi ký tự gõ tạo ra một cache key mới — dọn các key cũ để bộ nhớ không phình.
+        pruneSearchLists(state);
       })
       .addCase(queryArticles.fulfilled, (state, action) => {
         setSucceeded(state, listKeyQuery(action.meta.arg), action.payload, {
@@ -434,7 +607,7 @@ const articlesSlice = createSlice({
         });
       })
       .addCase(queryArticles.rejected, (state, action) => {
-        setFailed(state, listKeyQuery(action.meta.arg), action.error);
+        handleRejected(state, listKeyQuery(action.meta.arg), action);
       })
 
       .addCase(fetchArticleById.fulfilled, (state, action) => {
@@ -496,6 +669,9 @@ export const selectListMeta = (state: RootState, key: string): ListMeta | null =
 /** Id các bài được gắn badge "liên quan cao" trong danh sách `key`. */
 export const selectHighRelevanceIds = (state: RootState, key: string): string[] =>
   state.articles.lists[key]?.highRelevanceIds ?? EMPTY_IDS;
+
+/** Từ khoá tìm kiếm hiện tại — giữ lại để URL có thể chia sẻ. */
+export const selectActiveQuery = (state: RootState): string | null => state.articles.activeQuery;
 
 /** Id các bài liên quan đã cache theo `related:<id>`. */
 export const selectRelatedIds = (state: RootState, articleId: string): string[] =>

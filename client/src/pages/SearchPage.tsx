@@ -3,13 +3,14 @@ import { Col, Container, Row } from 'react-bootstrap';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
+  abortAllRequests,
   listKeyQuery,
   queryArticles,
+  selectActiveQuery,
   selectHighRelevanceIds,
 } from '@/store/slices/articlesSlice';
 import { selectCategories } from '@/store/slices/categoriesSlice';
 import { selectSources } from '@/store/slices/sourcesSlice';
-import { useDebounce } from '@/hooks/useDebounce';
 import { useListArticles } from '@/hooks/useListArticles';
 import { ArticleCard } from '@/components/article/ArticleCard';
 import { ArticleSkeleton } from '@/components/article/ArticleSkeleton';
@@ -17,8 +18,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { LoadMoreButton } from '@/components/common/LoadMoreButton';
 import { PAGE_SIZE } from '@/lib/constants';
-
-const DEBOUNCE_MS = 400;
 
 export function SearchPage() {
   const dispatch = useAppDispatch();
@@ -29,45 +28,51 @@ export function SearchPage() {
 
   const urlQuery = searchParams.get('q') ?? '';
   const [keyword, setKeyword] = useState(urlQuery);
-  const debouncedKeyword = useDebounce(keyword, DEBOUNCE_MS);
 
   const category = searchParams.get('category') ?? '';
   const source = searchParams.get('source') ?? '';
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
 
+  // Từ khoá đã "chốt" — slice chỉ cập nhật sau khi hết debounce nên
+  // danh sách đang xem không nhảy loạn mỗi ký tự gõ.
+  // Lúc mới vào trang, từ khoá lấy từ URL (deep-link) cho tới khi slice chốt.
+  const activeQuery = useAppSelector(selectActiveQuery) ?? urlQuery;
+
   const query = useMemo(
     () => ({
-      q: debouncedKeyword.trim(),
+      q: keyword.trim(),
       category: category || undefined,
       source: source || undefined,
       page,
       limit: PAGE_SIZE,
     }),
-    [debouncedKeyword, category, source, page],
+    [keyword, category, source, page],
   );
 
-  const key = listKeyQuery(query);
+  // Key của danh sách đang hiển thị — dùng từ khoá đã chốt để không nhảy layout.
+  const key = listKeyQuery({ ...query, q: activeQuery });
   const { items, meta, isLoading, status, error } = useListArticles(key);
   const highRelevanceIds = useAppSelector((state) => selectHighRelevanceIds(state, key));
 
-  // Đồng bộ từ khoá trong URL với ô nhập (khi người dùng gõ trực tiếp trên trang).
-  useEffect(() => {
-    if (debouncedKeyword.trim() === urlQuery.trim()) return;
-
-    const params = new URLSearchParams(searchParams);
-    if (debouncedKeyword.trim()) {
-      params.set('q', debouncedKeyword.trim());
-    } else {
-      params.delete('q');
-    }
-    params.delete('page');
-    setSearchParams(params, { replace: true });
-  }, [debouncedKeyword, urlQuery, searchParams, setSearchParams]);
-
+  // Gõ từ khoá → dispatch ngay. Slice tự debounce và huỷ request cũ.
   useEffect(() => {
     if (!query.q) return;
     void dispatch(queryArticles(query));
   }, [dispatch, query]);
+
+  // Đồng bộ từ khoá đã chốt vào URL để link có thể chia sẻ lại kết quả tìm kiếm.
+  useEffect(() => {
+    if (!activeQuery) return;
+    if (activeQuery === urlQuery) return;
+
+    const params = new URLSearchParams(searchParams);
+    params.set('q', activeQuery);
+    params.delete('page');
+    setSearchParams(params, { replace: true });
+  }, [activeQuery, urlQuery, searchParams, setSearchParams]);
+
+  // Rời trang thì huỷ request tìm kiếm đang chạy — không cần thiết khi đã điều hướng.
+  useEffect(() => () => abortAllRequests(), []);
 
   const retry = (): void => {
     void dispatch(queryArticles(query));
