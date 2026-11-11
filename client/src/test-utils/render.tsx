@@ -149,3 +149,24 @@ export async function flushPromises(): Promise<void> {
     await Promise.resolve();
   });
 }
+
+/**
+ * Mô phỏng người dùng gõ vào ô input.
+ *
+ * React không dùng thuộc tính `value` trực tiếp nên phải set qua setter gốc của DOM
+ * rồi bắn sự kiện `input` — giống cách trình duyệt thật hoạt động.
+ */
+export async function fireChange(
+  element: HTMLInputElement | HTMLSelectElement,
+  value: string,
+): Promise<void> {
+  const prototype =
+    element instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+
+  await act(async () => {
+    setter?.call(element, value);
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
