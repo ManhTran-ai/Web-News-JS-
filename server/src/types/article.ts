@@ -48,10 +48,31 @@ export interface ApiError {
   };
 }
 
+export type ApiErrorPayload = ApiError;
+
 export interface SourceStatus {
   id: string;
   name: string;
   ok: boolean;
   count: number;
   error?: string;
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  avatar?: string;
+  email?: string;
+}
+
+export interface Comment {
+  id: string;
+  articleId: string;
+  userId: string;
+  user?: User;
+  content: string;
+  isAnonymous: boolean;
+  createdAt: string;
+  likes?: number;
+  replies?: Comment[];
 }
