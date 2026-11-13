@@ -5,10 +5,16 @@ import type {
   Article,
   ArticleContent,
   Category,
+  Source,
 } from '@/types/article';
 
 export async function getCategories(): Promise<Category[]> {
   const response = await http.get<{ data: Category[] }>('/categories');
+  return response.data.data;
+}
+
+export async function getSources(): Promise<Source[]> {
+  const response = await http.get<{ data: Source[] }>('/sources');
   return response.data.data;
 }
 
@@ -48,6 +54,13 @@ export async function searchArticles(
 export async function getArticleById(id: string): Promise<Article> {
   const response = await http.get<ApiItem<Article>>(`/articles/${id}`);
   return response.data.data;
+}
+
+export async function getRelated(id: string, limit = 6): Promise<ApiList<Article>> {
+  const response = await http.get<ApiList<Article>>(`/articles/${id}/related`, {
+    params: { limit },
+  });
+  return response.data;
 }
 
 export async function getArticleContent(id: string): Promise<ArticleContent> {
