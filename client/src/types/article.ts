@@ -48,6 +48,8 @@ export interface ApiErrorPayload {
   };
 }
 
+export type ApiError = ApiErrorPayload;
+
 export interface Source {
   id: string;
   name: string;
@@ -56,6 +58,26 @@ export interface Source {
   count: number;
   ok: boolean;
   error?: string;
+  feeds?: { category: string; url: string }[];
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  avatar?: string;
+  email?: string;
+}
+
+export interface Comment {
+  id: string;
+  articleId: string;
+  userId: string;
+  user?: User;
+  content: string;
+  isAnonymous: boolean;
+  createdAt: string;
+  likes?: number;
+  replies?: Comment[];
 }
 
 export type RequestStatus = 'idle' | 'loading' | 'succeeded' | 'failed';

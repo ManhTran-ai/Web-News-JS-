@@ -4,6 +4,8 @@ import { sourcesReducer } from './slices/sourcesSlice';
 import { articlesReducer } from './slices/articlesSlice';
 import { articleContentReducer } from './slices/articleContentSlice';
 import { bookmarksReducer } from './slices/bookmarksSlice';
+import { authReducer } from './slices/authSlice';
+import { interactionReducer } from './slices/interactionSlice';
 import { uiReducer } from './slices/uiSlice';
 
 export const rootReducer = {
@@ -12,6 +14,8 @@ export const rootReducer = {
   articles: articlesReducer,
   articleContent: articleContentReducer,
   bookmarks: bookmarksReducer,
+  auth: authReducer,
+  interaction: interactionReducer,
   ui: uiReducer,
 };
 
