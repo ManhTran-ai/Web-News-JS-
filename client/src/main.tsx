@@ -9,12 +9,17 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@/styles/main.scss';
 import { store } from '@/store';
 import { router } from '@/router';
+import { fetchCategories } from '@/store/slices/categoriesSlice';
+import { fetchSources } from '@/store/slices/sourcesSlice';
 
 const container = document.getElementById('root');
 
 if (!container) {
   throw new Error('Không tìm thấy phần tử #root trong index.html');
 }
+
+void store.dispatch(fetchCategories());
+void store.dispatch(fetchSources());
 
 createRoot(container).render(
   <StrictMode>
