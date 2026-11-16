@@ -206,6 +206,11 @@ describe('header bảo mật', () => {
     const response = await fetch(`${baseUrl}/api/health`);
     expect(response.headers.get('x-powered-by')).toBeNull();
   });
+
+  it('có X-Request-Id cho mỗi request', async () => {
+    const response = await fetch(`${baseUrl}/api/health`);
+    expect(response.headers.get('x-request-id')).toBeTruthy();
+  });
 });
 
 describe('cache ETag', () => {
