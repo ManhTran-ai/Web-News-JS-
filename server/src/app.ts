@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { config, isProduction } from './config/env.js';
 import { apiRouter } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.js';
+import { requestContext } from './middlewares/request-context.js';
 
 const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const clientDist = resolve(serverRoot, 'client', 'dist');
@@ -40,6 +41,8 @@ export function createApp() {
       credentials: false,
     }),
   );
+
+  app.use(requestContext);
 
   app.use('/api', apiRouter);
 
