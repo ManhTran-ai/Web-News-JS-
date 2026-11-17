@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   STORAGE_KEYS,
   READER_FONT_SCALE_MAX,
@@ -17,17 +17,43 @@ interface ReaderToolbarProps {
 
 type SpeechState = 'idle' | 'speaking' | 'paused';
 
+const VIETNAMESE_LANG = 'vi';
+
 function readStoredScale(): number {
   const stored = readStorage<number>(STORAGE_KEYS.readerFontScale, 1);
   if (typeof stored !== 'number' || Number.isNaN(stored)) return 1;
   return Math.min(READER_FONT_SCALE_MAX, Math.max(READER_FONT_SCALE_MIN, stored));
 }
 
+/** Lọc ra các giọng đọc hỗ trợ tiếng Việt trong danh sách voice của trình duyệt. */
+export function pickVietnameseVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  return voices.filter((voice) => voice.lang.toLowerCase().startsWith(VIETNAMESE_LANG));
+}
+
 export function ReaderToolbar({ article, contentText = '' }: ReaderToolbarProps) {
   const [scale, setScale] = useState(readStoredScale);
   const [speechState, setSpeechState] = useState<SpeechState>('idle');
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceName, setVoiceName] = useState<string>('');
+  const [rate, setRate] = useState(1);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  // Danh sách voice thường được nạp bất đồng bộ nên phải nghe cả sự kiện
+  // `voiceschanged` của trình duyệt.
+  useEffect(() => {
+    if (!supported) return;
+
+    const sync = (): void => {
+      setVoices(pickVietnameseVoices(window.speechSynthesis.getVoices()));
+    };
+
+    sync();
+    window.speechSynthesis.addEventListener('voiceschanged', sync);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', sync);
+  }, [supported]);
 
   // Áp dụng cỡ chữ cho phần nội dung bài viết.
   useEffect(() => {
@@ -48,8 +74,13 @@ export function ReaderToolbar({ article, contentText = '' }: ReaderToolbarProps)
     );
   };
 
+  const selectedVoice = useMemo(
+    () => voices.find((voice) => voice.name === voiceName) ?? null,
+    [voices, voiceName],
+  );
+
   const speak = useCallback(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (!supported) {
       setSpeechError('Trình duyệt này không hỗ trợ đọc bằng giọng nói.');
       return;
     }
@@ -64,37 +95,42 @@ export function ReaderToolbar({ article, contentText = '' }: ReaderToolbarProps)
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'vi-VN';
-    const voice = window.speechSynthesis.getVoices().find((item) =>
-      item.lang.toLowerCase().startsWith('vi'),
-    );
-    if (voice) utterance.voice = voice;
+    utterance.rate = rate;
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    } else {
+      // Không chọn được voice tiếng Việt — vẫn đọc bằng giọng mặc định của hệ điều hành.
+      setSpeechError('Không tìm thấy giọng đọc tiếng Việt, đang dùng giọng mặc định.');
+    }
 
     utterance.onend = () => setSpeechState('idle');
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
       setSpeechState('idle');
+      utteranceRef.current = null;
+      if (event.error === 'canceled' || event.error === 'interrupted') return;
       setSpeechError('Không thể đọc nội dung bài viết.');
     };
 
     utteranceRef.current = utterance;
-    setSpeechError(null);
     setSpeechState('speaking');
     window.speechSynthesis.speak(utterance);
-  }, [contentText]);
+  }, [contentText, rate, selectedVoice, supported]);
 
   const pause = (): void => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (!supported) return;
     window.speechSynthesis.pause();
     setSpeechState('paused');
   };
 
   const resume = (): void => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (!supported) return;
     window.speechSynthesis.resume();
     setSpeechState('speaking');
   };
 
   const stop = (): void => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (!supported) return;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
     setSpeechState('idle');
@@ -161,6 +197,53 @@ export function ReaderToolbar({ article, contentText = '' }: ReaderToolbarProps)
           </button>
         )}
       </div>
+
+      {supported && (
+        <div className="reader-toolbar__group reader-toolbar__group--voice">
+          <label className="visually-hidden" htmlFor="reader-voice">
+            Giọng đọc
+          </label>
+          <select
+            id="reader-voice"
+            className="form-select form-select-sm w-auto"
+            value={voiceName}
+            disabled={voices.length === 0}
+            onChange={(event) => setVoiceName(event.target.value)}
+          >
+            <option value="">
+              {voices.length === 0 ? 'Không có giọng tiếng Việt' : 'Giọng mặc định'}
+            </option>
+            {voices.map((voice) => (
+              <option key={voice.name} value={voice.name}>
+                {voice.name}
+              </option>
+            ))}
+          </select>
+
+          <label className="visually-hidden" htmlFor="reader-rate">
+            Tốc độ đọc
+          </label>
+          <input
+            id="reader-rate"
+            className="form-range reader-toolbar__rate"
+            type="range"
+            min={0.5}
+            max={2}
+            step={0.1}
+            value={rate}
+            onChange={(event) => setRate(Number(event.target.value))}
+          />
+          <span className="reader-toolbar__scale" aria-live="polite">
+            {rate.toFixed(1)}×
+          </span>
+        </div>
+      )}
+
+      {!supported && (
+        <p className="reader-toolbar__error" role="alert">
+          Trình duyệt này không hỗ trợ đọc bằng giọng nói.
+        </p>
+      )}
 
       {speechError && (
         <p className="reader-toolbar__error" role="alert">

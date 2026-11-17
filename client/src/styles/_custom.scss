@@ -696,6 +696,14 @@ a:hover {
   color: var(--n24-negative);
 }
 
+.reader-toolbar__group--voice {
+  flex-wrap: wrap;
+}
+
+.reader-toolbar__rate {
+  width: 120px;
+}
+
 // --- bình luận ---------------------------------------------------------------
 
 .comment-section {
