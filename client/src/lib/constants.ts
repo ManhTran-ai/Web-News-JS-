@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   accounts: 'news24h:accounts',
   readingHistory: 'news24h:reading-history',
   comments: 'news24h:comments',
+  deletedComments: 'news24h:deleted-comments',
   theme: 'news24h:theme',
   readerFontScale: 'news24h:reader-font-scale',
 } as const;
