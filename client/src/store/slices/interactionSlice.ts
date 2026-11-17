@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { MAX_READING_HISTORY, STORAGE_KEYS, type HistoryRange } from '@/lib/constants';
 import { readStorage, writeStorage } from '@/lib/storage';
-import { historyCutoff } from '@/lib/time';
+import { historyCutoff, isToday } from '@/lib/time';
 import type { Article, Comment } from '@/types/article';
 
 interface ReadingHistoryEntry {
@@ -160,3 +160,7 @@ export const selectCommentError = (state: { interaction: InteractionState }): st
 
 export const selectLastDeleted = (state: { interaction: InteractionState }): DeletedComment | null =>
   state.interaction.lastDeleted;
+
+/** Số bài đã đọc hôm nay — dùng cho thanh tiến độ trên trang "Đã lưu". */
+export const selectTodayReadCount = (state: { interaction: InteractionState }): number =>
+  state.interaction.readingHistory.filter((entry) => isToday(entry.readAt)).length;

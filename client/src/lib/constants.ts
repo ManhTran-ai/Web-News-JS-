@@ -55,6 +55,9 @@ export const HISTORY_RANGE_DAYS = {
 
 export type HistoryRange = keyof typeof HISTORY_RANGE_DAYS;
 
+/** Mục tiêu số bài đọc mỗi ngày — dùng cho thanh phần trăm tiến độ. */
+export const DAILY_READING_GOAL = 10;
+
 export const POLLING_INTERVAL_MS = 60000;
 
 export const DEFAULT_SOURCES = [

@@ -9,6 +9,7 @@ import {
 } from '@/store/slices/interactionSlice';
 import { ArticleCard } from '@/components/article/ArticleCard';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ReadStats } from '@/components/common/ReadStats';
 import type { HistoryRange } from '@/lib/constants';
 import { historyCutoff, historyDayLabel } from '@/lib/time';
 
@@ -79,6 +80,8 @@ export function SavedPage() {
       <title>Tin tức 24h — Đã lưu</title>
 
       <h1 className="h3 mb-4">Bài đã lưu &amp; lịch sử đọc</h1>
+
+      <ReadStats />
 
       <Tab.Container activeKey={tab} onSelect={(key) => setTab((key as SavedTab) ?? 'bookmarks')}>
         <Nav variant="tabs" className="mb-4">

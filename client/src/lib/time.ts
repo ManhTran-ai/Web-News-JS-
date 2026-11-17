@@ -54,3 +54,10 @@ export function historyDayLabel(iso: string, now = Date.now()): string {
 
   return date.format('DD/MM/YYYY');
 }
+
+/** Kiểm tra một mốc thời gian có nằm trong ngày hôm nay hay không. */
+export function isToday(iso: string, now = Date.now()): boolean {
+  const date = dayjs(iso);
+  if (!date.isValid()) return false;
+  return date.startOf('day').isSame(dayjs(now).startOf('day'), 'day');
+}
