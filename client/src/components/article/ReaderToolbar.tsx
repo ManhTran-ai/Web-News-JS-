@@ -6,6 +6,7 @@ import {
   READER_FONT_SCALE_STEP,
 } from '@/lib/constants';
 import { readStorage, writeStorage } from '@/lib/storage';
+import { pickVietnameseVoices } from '@/lib/speech';
 import { BookmarkButton } from '@/components/article/BookmarkButton';
 import type { Article } from '@/types/article';
 
@@ -17,17 +18,10 @@ interface ReaderToolbarProps {
 
 type SpeechState = 'idle' | 'speaking' | 'paused';
 
-const VIETNAMESE_LANG = 'vi';
-
 function readStoredScale(): number {
   const stored = readStorage<number>(STORAGE_KEYS.readerFontScale, 1);
   if (typeof stored !== 'number' || Number.isNaN(stored)) return 1;
   return Math.min(READER_FONT_SCALE_MAX, Math.max(READER_FONT_SCALE_MIN, stored));
-}
-
-/** Lọc ra các giọng đọc hỗ trợ tiếng Việt trong danh sách voice của trình duyệt. */
-export function pickVietnameseVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
-  return voices.filter((voice) => voice.lang.toLowerCase().startsWith(VIETNAMESE_LANG));
 }
 
 export function ReaderToolbar({ article, contentText = '' }: ReaderToolbarProps) {
