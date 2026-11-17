@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { MAX_READING_HISTORY, STORAGE_KEYS } from '@/lib/constants';
+import { MAX_READING_HISTORY, STORAGE_KEYS, type HistoryRange } from '@/lib/constants';
 import { readStorage, writeStorage } from '@/lib/storage';
+import { historyCutoff } from '@/lib/time';
 import type { Article, Comment } from '@/types/article';
 
 interface ReadingHistoryEntry {
@@ -51,6 +52,20 @@ const interactionSlice = createSlice({
       state.readingHistory = state.readingHistory.filter(
         (item) => item.article.id !== action.payload,
       );
+      writeStorage(STORAGE_KEYS.readingHistory, state.readingHistory);
+    },
+    /** Xoá lịch sử đọc theo khoảng thời gian — "hôm nay", "7 ngày" hoặc "tất cả". */
+    clearReadingHistoryByRange(state, action: { payload: HistoryRange }) {
+      const cutoff = historyCutoff(action.payload);
+      if (cutoff === null) {
+        state.readingHistory = [];
+      } else {
+        state.readingHistory = state.readingHistory.filter((item) => {
+          const readAt = Date.parse(item.readAt);
+          if (Number.isNaN(readAt)) return false;
+          return readAt < cutoff;
+        });
+      }
       writeStorage(STORAGE_KEYS.readingHistory, state.readingHistory);
     },
     addComment(state, action: { payload: Comment }) {
@@ -122,6 +137,7 @@ export const interactionReducer = interactionSlice.reducer;
 export const {
   recordRead,
   clearReadingHistory,
+  clearReadingHistoryByRange,
   removeReadingHistoryItem,
   addComment,
   removeComment,

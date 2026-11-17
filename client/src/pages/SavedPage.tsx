@@ -3,14 +3,14 @@ import { Col, Container, Nav, Row, Tab } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearBookmarks, removeBookmark, selectBookmarks } from '@/store/slices/bookmarksSlice';
 import {
-  clearReadingHistory,
+  clearReadingHistoryByRange,
   removeReadingHistoryItem,
   selectReadingHistory,
 } from '@/store/slices/interactionSlice';
 import { ArticleCard } from '@/components/article/ArticleCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { HistoryRange } from '@/lib/constants';
-import { historyCutoff } from '@/lib/time';
+import { historyCutoff, historyDayLabel } from '@/lib/time';
 
 type SavedTab = 'bookmarks' | 'history';
 
@@ -50,6 +50,23 @@ export function SavedPage() {
       }),
     [readingHistory, category, cutoff],
   );
+
+  // Gom lịch sử theo ngày để dễ quét — nhóm giữ nguyên thứ tự ngày đã đọc.
+  const historyGroups = useMemo(() => {
+    const groups: { label: string; entries: typeof filteredHistory }[] = [];
+
+    for (const entry of filteredHistory) {
+      const label = historyDayLabel(entry.readAt);
+      const last = groups[groups.length - 1];
+      if (last && last.label === label) {
+        last.entries.push(entry);
+      } else {
+        groups.push({ label, entries: [entry] });
+      }
+    }
+
+    return groups;
+  }, [filteredHistory]);
 
   // Mốc thời gian được tính lúc bấm nút nên không phụ thuộc thời điểm render.
   const applyRange = (key: HistoryRange): void => {
@@ -159,13 +176,19 @@ export function SavedPage() {
                     </select>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-outline-dark btn-sm ms-auto"
-                    onClick={() => dispatch(clearReadingHistory())}
-                  >
-                    Xoá toàn bộ lịch sử
-                  </button>
+                  <div className="saved-filters__group ms-auto">
+                    <span className="visually-hidden">Xoá lịch sử theo khoảng thời gian</span>
+                    {(Object.keys(RANGE_LABELS) as HistoryRange[]).map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="btn btn-outline-dark btn-sm"
+                        onClick={() => dispatch(clearReadingHistoryByRange(key))}
+                      >
+                        Xoá {RANGE_LABELS[key].toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {filteredHistory.length === 0 ? (
@@ -174,23 +197,28 @@ export function SavedPage() {
                     description="Hãy chọn khoảng thời gian khác hoặc bỏ bộ lọc chuyên mục."
                   />
                 ) : (
-                  <Row className="g-3">
-                    {filteredHistory.map((entry) => (
-                      <Col xs={12} md={6} lg={4} key={entry.article.id}>
-                        <div className="position-relative">
-                          <ArticleCard article={entry.article} variant="standard" showCategory />
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-2"
-                            aria-label={`Xoá khỏi lịch sử: ${entry.article.title}`}
-                            onClick={() => dispatch(removeReadingHistoryItem(entry.article.id))}
-                          >
-                            <i className="bi bi-trash" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
+                  historyGroups.map((group) => (
+                    <section className="history-group" key={group.label}>
+                      <h2 className="history-group__date">{group.label}</h2>
+                      <Row className="g-3">
+                        {group.entries.map((entry) => (
+                          <Col xs={12} md={6} lg={4} key={entry.article.id}>
+                            <div className="position-relative">
+                              <ArticleCard article={entry.article} variant="standard" showCategory />
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-2"
+                                aria-label={`Xoá khỏi lịch sử: ${entry.article.title}`}
+                                onClick={() => dispatch(removeReadingHistoryItem(entry.article.id))}
+                              >
+                                <i className="bi bi-trash" aria-hidden="true" />
+                              </button>
+                            </div>
+                          </Col>
+                        ))}
+                      </Row>
+                    </section>
+                  ))
                 )}
               </>
             )}
