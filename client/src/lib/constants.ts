@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   accounts: 'news24h:accounts',
   readingHistory: 'news24h:reading-history',
   comments: 'news24h:comments',
+  deletedComments: 'news24h:deleted-comments',
   theme: 'news24h:theme',
   readerFontScale: 'news24h:reader-font-scale',
 } as const;
@@ -53,6 +54,9 @@ export const HISTORY_RANGE_DAYS = {
 } as const;
 
 export type HistoryRange = keyof typeof HISTORY_RANGE_DAYS;
+
+/** Mục tiêu số bài đọc mỗi ngày — dùng cho thanh phần trăm tiến độ. */
+export const DAILY_READING_GOAL = 10;
 
 export const POLLING_INTERVAL_MS = 60000;
 

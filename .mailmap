@@ -1,0 +1,4 @@
+# Gộp mọi commit dùng email 23130205@st.hcmuaf.edu.vn về đúng một nick.
+# "Trần Thị Thanh Ngân" là tên hiển thị GitHub tự sinh khi merge PR — cùng email
+# nên Insights đã tính vào 23130205-dev, mailmap giúp `git shortlog` khớp luôn.
+23130205-dev <23130205@st.hcmuaf.edu.vn> Trần Thị Thanh Ngân <23130205@st.hcmuaf.edu.vn>
