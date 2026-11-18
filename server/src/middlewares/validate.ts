@@ -19,3 +19,21 @@ export function validateQuery(schema: z.ZodType) {
     next();
   };
 }
+
+export function validateBody(schema: z.ZodType) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      next(
+        new ApiError(
+          400,
+          'VALIDATION_ERROR',
+          `Dữ liệu gửi lên không hợp lệ: ${result.error.issues.map((i) => i.message).join(', ')}`,
+        ),
+      );
+      return;
+    }
+    res.locals.parsedBody = result.data;
+    next();
+  };
+}
