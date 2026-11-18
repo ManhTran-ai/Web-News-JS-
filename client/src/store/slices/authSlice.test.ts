@@ -1,19 +1,31 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
+import { ApiError } from '@/api/http';
 import { rootReducer } from '../index';
 import {
   authReducer,
   login,
   register,
   logout,
+  changePassword,
   clearAuthError,
   selectCurrentUser,
   selectIsAuthenticated,
   selectAuthError,
+  selectResetEmail,
+  sendResetCode,
+  submitResetPassword,
   validateCredentials,
   validateRegister,
 } from './authSlice';
+
+vi.mock('@/api/endpoints', () => ({
+  requestPasswordResetCode: vi.fn(),
+  verifyPasswordResetCode: vi.fn(),
+}));
+
+const endpoints = await import('@/api/endpoints');
 
 function makeStore() {
   return configureStore({ reducer: rootReducer });
@@ -95,5 +107,84 @@ describe('authSlice', () => {
     expect(
       validateRegister({ fullName: '  ', email: 'a@example.com', password: '123456' }).fullName,
     ).toBeTruthy();
+  });
+
+  it('quên mật khẩu: gửi mã qua email rồi đặt lại được mật khẩu mới', async () => {
+    const store = makeStore();
+    const email = `reset-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn E', email, password: 'matkhau123' }));
+    store.dispatch(logout());
+
+    vi.mocked(endpoints.requestPasswordResetCode).mockResolvedValue(undefined);
+    await store.dispatch(sendResetCode({ email }));
+    expect(selectAuthError(store.getState())).toBeNull();
+    expect(selectResetEmail(store.getState())).toBe(email);
+
+    vi.mocked(endpoints.verifyPasswordResetCode).mockResolvedValue(undefined);
+    await store.dispatch(
+      submitResetPassword({ email, code: '123456', password: 'matkhaumoi123' }),
+    );
+    expect(selectAuthError(store.getState())).toBeNull();
+
+    store.dispatch(login({ email, password: 'matkhaumoi123' }));
+    expect(selectIsAuthenticated(store.getState())).toBe(true);
+  });
+
+  it('quên mật khẩu: server báo mã không đúng thì báo lỗi', async () => {
+    const store = makeStore();
+    const email = `reset-sai-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn F', email, password: 'matkhau123' }));
+    store.dispatch(logout());
+
+    vi.mocked(endpoints.requestPasswordResetCode).mockResolvedValue(undefined);
+    await store.dispatch(sendResetCode({ email }));
+
+    vi.mocked(endpoints.verifyPasswordResetCode).mockRejectedValue(
+      new ApiError('INVALID_CODE', 'Mã bảo mật không đúng.', 400),
+    );
+    await store.dispatch(
+      submitResetPassword({ email, code: '000000', password: 'matkhaumoi123' }),
+    );
+    expect(selectAuthError(store.getState())).toBe('Mã bảo mật không đúng.');
+
+    store.dispatch(login({ email, password: 'matkhaumoi123' }));
+    expect(selectIsAuthenticated(store.getState())).toBe(false);
+  });
+
+  it('quên mật khẩu: server chưa cấu hình SMTP thì báo lỗi', async () => {
+    const store = makeStore();
+
+    vi.mocked(endpoints.requestPasswordResetCode).mockRejectedValue(
+      new ApiError('MAIL_NOT_CONFIGURED', 'Chưa cấu hình SMTP nên chưa thể gửi mã bảo mật qua email.', 503),
+    );
+    await store.dispatch(sendResetCode({ email: 'a@example.com' }));
+
+    expect(selectAuthError(store.getState())).toContain('Chưa cấu hình SMTP');
+    expect(selectResetEmail(store.getState())).toBeNull();
+  });
+
+  it('đổi mật khẩu khi đã đăng nhập', () => {
+    const store = makeStore();
+    const email = `change-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn G', email, password: 'matkhau123' }));
+    store.dispatch(changePassword({ oldPassword: 'matkhau123', password: 'matkhaumoi123' }));
+    expect(selectAuthError(store.getState())).toBeNull();
+
+    store.dispatch(logout());
+    store.dispatch(login({ email, password: 'matkhaumoi123' }));
+    expect(selectIsAuthenticated(store.getState())).toBe(true);
+  });
+
+  it('đổi mật khẩu: sai mật khẩu hiện tại thì bị từ chối', () => {
+    const store = makeStore();
+    const email = `change-sai-${Date.now()}@example.com`;
+
+    store.dispatch(register({ fullName: 'Nguyễn Văn H', email, password: 'matkhau123' }));
+    store.dispatch(changePassword({ oldPassword: 'saimatkhau', password: 'matkhaumoi123' }));
+
+    expect(selectAuthError(store.getState())).toBe('Mật khẩu hiện tại không đúng.');
   });
 });
