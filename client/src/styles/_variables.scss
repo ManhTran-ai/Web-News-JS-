@@ -54,9 +54,10 @@ $navbar-light-color: $n24-ink-muted;
 $navbar-light-hover-color: $n24-ink;
 $navbar-light-active-color: $n24-accent;
 
-$input-bg: $n24-surface;
-$input-border-color: $n24-border;
-$input-focus-border-color: $n24-accent;
+$input-bg: var(--n24-surface);
+$input-border-color: var(--n24-border);
+$input-color: var(--n24-text);
+$input-focus-border-color: var(--n24-accent);
 $input-focus-box-shadow: 0 0 0 0.2rem rgba($n24-accent, 0.16);
 
 $btn-border-radius: 0.375rem;
