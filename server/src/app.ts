@@ -16,6 +16,8 @@ export function createApp() {
 
   app.disable('x-powered-by');
 
+  app.use(express.json({ limit: '100kb' }));
+
   app.use(
     helmet({
       contentSecurityPolicy: {
