@@ -48,8 +48,8 @@ hoặc một nhóm API đã sẵn sàng.
 `ManhTran-ai` (48), `23130205-dev` (18), `LV-Tai` (15).
 > Insights gộp theo **email**, nên `Trần Thị Thanh Ngân <23130205@st.hcmuaf.edu.vn>`
 > và `23130205-dev <23130205@st.hcmuaf.edu.vn>` là cùng một tài khoản.
-> `git shortlog` gộp theo **tên** → hiển thị 4 dòng. Muốn shortlog khớp Insights
-> thì thêm file `.mailmap` ở thư mục gốc repo.
+> File `.mailmap` ở thư mục gốc repo đã được thêm (commit #6 tuần 4) nên `git shortlog`
+> cũng gộp về đúng 1 nick — hiện còn 3 dòng: `ManhTran-ai`, `23130205-dev`, `levantai`.
 >
 > 7 commit tuần 3 của Ngân đều dùng đúng nick
 > `23130205-dev <23130205@st.hcmuaf.edu.vn>` (SHA mới sau khi viết lại lịch sử:
@@ -354,12 +354,12 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 | # | Commit | Nội dung | File | Trạng thái |
 |---|---|---|---|---|
-| 1 | `feat(client): comment - thong bao loi + khoi phuc binh luan` | Toast lỗi, undo xoá bình luận, giữ bình luận cũ khi reload | `store/slices/interactionSlice.ts` | ⬜ |
-| 2 | `feat(client): lich su doc - nhom theo ngay + xoa theo khoang` | Nhóm lịch sử theo ngày, xoá "hôm nay" / "7 ngày" / "tất cả" | `pages/SavedPage.tsx` | ⬜ |
-| 3 | `feat(client): doc bang giong noi - dieu khien van toc + xu ly loi` | Chọn voice tiếng Việt, xử lý trình duyệt không hỗ trợ, đọc / dừng / tạm dừng | `components/article/ReaderToolbar.tsx` | ⬜ |
-| 4 | `feat(client): theo doi hanh dong doc + hien thi phan tram` | Đếm số bài đã đọc, thanh "Bạn đã đọc X bài hôm nay" | `pages/SavedPage.tsx` | ⬜ |
-| 5 | `test(client): unit test cho interactionSlice + bookmarksSlice` | Test thêm/xoá bình luận, ẩn danh vẫn gắn `userId`, lịch sử không trùng | `store/slices/interactionSlice.test.ts` | ✅ xong (`c54bf74`) |
-| 6 | `docs(client): huong dan tinh nang nguoi dung + checklist doi chieu yeu cau` | Đối chiếu từng yêu cầu 5–6 của giảng viên với file đã làm | `docs/CODE_GUIDE.md` | ⬜ `docs/CODE_GUIDE.md` đã bị xoá (`da0ff4b`) — cần tạo lại |
+| 1 | `feat(client): comment - thong bao loi + khoi phuc binh luan` | Toast lỗi, undo xoá bình luận, giữ bình luận cũ khi reload | `store/slices/interactionSlice.ts` | ✅ xong (`b6e85f9`) |
+| 2 | `feat(client): lich su doc - nhom theo ngay + xoa theo khoang` | Nhóm lịch sử theo ngày, xoá "hôm nay" / "7 ngày" / "tất cả" | `pages/SavedPage.tsx` | ✅ xong (`00553cf`) |
+| 3 | `feat(client): doc bang giong noi - dieu khien van toc + xu ly loi` | Chọn voice tiếng Việt, xử lý trình duyệt không hỗ trợ, đọc / dừng / tạm dừng | `components/article/ReaderToolbar.tsx` | ✅ xong (`d10efc8`) |
+| 4 | `feat(client): theo doi hanh dong doc + hien thi phan tram` | Đếm số bài đã đọc, thanh "Bạn đã đọc X bài hôm nay" | `pages/SavedPage.tsx` | ✅ xong (`e619370`) |
+| 5 | `test(client): unit test cho interactionSlice + bookmarksSlice` | Test thêm/xoá bình luận, ẩn danh vẫn gắn `userId`, lịch sử không trùng | `store/slices/interactionSlice.test.ts` | ✅ xong (`0628f6a`) |
+| 6 | `docs(client): huong dan tinh nang nguoi dung + checklist doi chieu yeu cau` | Đối chiếu từng yêu cầu 5–6 của giảng viên với file đã làm | `docs/CODE_GUIDE.md` | ✅ xong (commit #6 — `docs(client): huong dan tinh nang nguoi dung...`) — file đã tạo lại |
 
 ---
 
@@ -369,8 +369,8 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 |---|---|---|---|---|---|
 | **Mạnh** | 7 | 6 | 6 | **19** | 14 / 19 |
 | **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
-| **Ngân** | 5 | 7 | 6 | **18** | 13 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 42 / 53 |
+| **Ngân** | 5 | 7 | 6 | **18** | 18 / 18 |
+| **Tổng** | 18 | 18 | 17 | **53** | 47 / 53 |
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
@@ -455,11 +455,16 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | Ngân | `store/slices/commentsSlice.ts` | Ngân #1 tuần 3 (dùng `interactionSlice.ts` — xem rủi ro #1) | ✅ đã hoà giải (`3f919c7`) |
 | Ngân | `pages/ArticleDetailPage.tsx` | Ngân #4 tuần 2, #6 tuần 3 | ✅ xong (`ba59557`, `9c57d95`) |
 | Ngân | `components/article/ArticleBody.tsx` | Ngân #4 tuần 2 | ✅ xong (`ba59557`) |
-| Ngân | `components/article/ReaderToolbar.tsx` | Ngân #5 tuần 3, #3 tuần 4 | ✅ xong (`4ad1aa1`) — tuần 4 #3 sẽ nâng cấp: chọn voice, xử lý trình duyệt không hỗ trợ |
+| Ngân | `components/article/ReaderToolbar.tsx` | Ngân #5 tuần 3, #3 tuần 4 | ✅ xong (`4ad1aa1`, `2b9f01e`) — tuần 4 #3 đã nâng cấp: chọn voice tiếng Việt, slider tốc độ, xử lý trình duyệt không hỗ trợ |
 | Ngân | `components/common/AuthModal.tsx` | Ngân #2 tuần 3 | ✅ xong (`7185a9d`) |
-| Ngân | `components/article/CommentSection.tsx` | Ngân #3, #4 tuần 3 | ✅ xong (`e4f8fb0`, `dfeb611`) |
-| Ngân | `pages/SavedPage.tsx` | Ngân #5 tuần 2, #7 tuần 3, #2 + #4 tuần 4 | ✅ xong (`70408cb`, `01e5ee5`) |
+| Ngân | `components/article/CommentSection.tsx` | Ngân #3, #4 tuần 3, #1 tuần 4 | ✅ xong (`e4f8fb0`, `dfeb611`, `b6e85f9`) — thêm toast lỗi + nút "Hoàn tác" khi xoá |
+| Ngân | `pages/SavedPage.tsx` | Ngân #5 tuần 2, #7 tuần 3, #2 + #4 tuần 4 | ✅ xong (`70408cb`, `01e5ee5`, `71bc778`, `92a8fdb`) — nhóm lịch sử theo ngày, xoá theo khoảng, thanh tiến độ đọc |
 | Ngân | `store/slices/relatedArticlesSlice.ts` | Ngân #6 tuần 3 (slice riêng — không đụng `articlesSlice.ts` của Mạnh) | ✅ xong (`9c57d95`) |
+
+| Ngân | `store/slices/interactionSlice.ts` | Ngân #1 tuần 3, #1 + #5 tuần 4 | ✅ xong (`3f919c7`, `ff511a3`, `f98bbb9`) — thêm `commentError`, `lastDeleted` (hoàn tác), `clearReadingHistoryByRange` |
+| Ngân | `components/common/Toast.tsx` | Ngân #1 tuần 4 | ✅ xong (`b6e85f9`) — component thông báo dùng chung |
+| Ngân | `components/common/ReadStats.tsx` | Ngân #4 tuần 4 | ✅ xong (`e619370`) — thanh phần trăm bài đã đọc hôm nay |
+| Ngân | `docs/CODE_GUIDE.md` | Ngân #6 tuần 4 | ✅ xong (commit #6) — tạo lại file đã bị xoá |
 
 **Tổng: 33/32 file trong docx đã có commit bảo vệ — đủ 100%, không còn file nào chưa tạo.**
 

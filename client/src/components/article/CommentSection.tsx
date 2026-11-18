@@ -3,13 +3,19 @@ import { Button, Form } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   addComment,
+  clearLastDeleted,
   removeComment,
+  restoreComment,
+  selectCommentError,
   selectCommentsByArticle,
+  selectLastDeleted,
+  setCommentError,
   setCommentLiked,
 } from '@/store/slices/interactionSlice';
 import { selectCurrentUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import { AuthModal } from '@/components/common/AuthModal';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Toast } from '@/components/common/Toast';
 import { timeAgo } from '@/lib/time';
 import type { Comment } from '@/types/article';
 
@@ -22,6 +28,8 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   const user = useAppSelector(selectCurrentUser);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const comments = useAppSelector((state) => selectCommentsByArticle(state, articleId));
+  const commentError = useAppSelector(selectCommentError);
+  const lastDeleted = useAppSelector(selectLastDeleted);
 
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -31,6 +39,9 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     () => [...comments].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [comments],
   );
+
+  // Chỉ hiện nút "Hoàn tác" cho bình luận vừa xoá đúng ở bài đang xem.
+  const canUndo = lastDeleted?.articleId === articleId;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -54,6 +65,36 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     setContent('');
   };
 
+  const handleUndo = (): void => {
+    dispatch(restoreComment());
+  };
+
+  const handleDismissUndo = (): void => {
+    dispatch(clearLastDeleted());
+  };
+
+  const commentList = sortedComments.length > 0 && (
+    <ul className="comment-list">
+      {sortedComments.map((comment) => (
+        <CommentItem
+          key={comment.id}
+          comment={comment}
+          currentUserId={user?.id ?? null}
+          onLike={() =>
+            dispatch(
+              setCommentLiked({
+                articleId,
+                commentId: comment.id,
+                liked: (comment.likes ?? 0) === 0,
+              }),
+            )
+          }
+          onRemove={() => dispatch(removeComment({ articleId, commentId: comment.id }))}
+        />
+      ))}
+    </ul>
+  );
+
   if (!isAuthenticated || !user) {
     return (
       <section className="comment-section" id="comments">
@@ -66,25 +107,14 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           </Button>
         </div>
 
-        {sortedComments.length > 0 && (
-          <ul className="comment-list mt-4">
-            {sortedComments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                currentUserId={null}
-                onLike={() =>
-                  dispatch(
-                    setCommentLiked({
-                      articleId,
-                      commentId: comment.id,
-                      liked: (comment.likes ?? 0) === 0,
-                    }),
-                  )
-                }
-              />
-            ))}
-          </ul>
+        {commentList}
+
+        {commentError && (
+          <Toast
+            message={commentError}
+            variant="error"
+            onClose={() => dispatch(setCommentError(null))}
+          />
         )}
 
         <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
@@ -129,31 +159,31 @@ export function CommentSection({ articleId }: CommentSectionProps) {
         </p>
       </Form>
 
+      {commentError && (
+        <Toast
+          message={commentError}
+          variant="error"
+          onClose={() => dispatch(setCommentError(null))}
+        />
+      )}
+
+      {canUndo && (
+        <Toast
+          message="Đã xoá bình luận."
+          actionLabel="Hoàn tác"
+          onAction={handleUndo}
+          onClose={handleDismissUndo}
+          autoHideMs={8000}
+        />
+      )}
+
       {sortedComments.length === 0 ? (
         <EmptyState
           title="Chưa có bình luận nào"
           description="Hãy là người đầu tiên bình luận về bài viết này."
         />
       ) : (
-        <ul className="comment-list">
-          {sortedComments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              comment={comment}
-              currentUserId={user.id}
-              onLike={() =>
-                dispatch(
-                  setCommentLiked({
-                    articleId,
-                    commentId: comment.id,
-                    liked: (comment.likes ?? 0) === 0,
-                  }),
-                )
-              }
-              onRemove={() => dispatch(removeComment({ articleId, commentId: comment.id }))}
-            />
-          ))}
-        </ul>
+        commentList
       )}
     </section>
   );

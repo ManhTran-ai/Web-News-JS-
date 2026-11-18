@@ -40,3 +40,24 @@ export function historyCutoff(range: HistoryRange, now = Date.now()): number | n
   if (range === 'today') return dayjs(now).startOf('day').valueOf();
   return now - days * 86_400_000;
 }
+
+/** Nhãn nhóm ngày cho lịch sử đọc — "Hôm nay", "Hôm qua" hoặc ngày cụ thể. */
+export function historyDayLabel(iso: string, now = Date.now()): string {
+  const date = dayjs(iso);
+  if (!date.isValid()) return 'Không rõ ngày';
+
+  const today = dayjs(now).startOf('day');
+  const target = date.startOf('day');
+
+  if (target.isSame(today, 'day')) return 'Hôm nay';
+  if (target.isSame(today.subtract(1, 'day'), 'day')) return 'Hôm qua';
+
+  return date.format('DD/MM/YYYY');
+}
+
+/** Kiểm tra một mốc thời gian có nằm trong ngày hôm nay hay không. */
+export function isToday(iso: string, now = Date.now()): boolean {
+  const date = dayjs(iso);
+  if (!date.isValid()) return false;
+  return date.startOf('day').isSame(dayjs(now).startOf('day'), 'day');
+}
