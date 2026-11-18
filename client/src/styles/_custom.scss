@@ -13,11 +13,33 @@
 
   --n24-accent: #{$n24-accent};
   --n24-accent-soft: #{$n24-accent-soft};
+  --n24-accent-contrast: #ffffff;
+  --n24-accent-hover: #{darken($n24-accent, 8%)};
   --n24-link: #{$n24-link};
+
+  --n24-btn-solid-bg: #{$n24-ink};
+  --n24-btn-solid-text: #ffffff;
+  --n24-btn-solid-hover-bg: #{tint-color($n24-ink, 15%)};
+  --n24-btn-outline-text: #{$n24-ink};
+  --n24-btn-outline-border: #{$n24-ink};
+  --n24-btn-outline-hover-bg: #{$n24-ink};
+  --n24-btn-outline-hover-text: #ffffff;
+  --n24-btn-muted-text: #{$n24-ink-muted};
+  --n24-btn-muted-border: #{$n24-ink-muted};
+  --n24-btn-muted-hover-bg: #{$n24-ink-muted};
+  --n24-btn-muted-hover-text: #ffffff;
 
   --n24-positive: #1b6b3a;
   --n24-warning: #8a5a00;
   --n24-negative: #b3261e;
+
+  --bs-secondary-rgb: 85, 80, 76;
+  --bs-tertiary-rgb: 110, 104, 98;
+  --bs-primary-rgb: 198, 40, 40;
+  --bs-success-rgb: 27, 107, 58;
+  --bs-info-rgb: 43, 106, 143;
+  --bs-warning-rgb: 138, 90, 0;
+  --bs-danger-rgb: 179, 38, 30;
 
   --n24-radius-card: 8px;
   --n24-radius-control: 6px;
@@ -59,11 +81,37 @@
 
   --n24-accent: #ff4d4f;
   --n24-accent-soft: #2a1518;
+  --n24-accent-contrast: #141312;
+  --n24-accent-hover: #ff6b6b;
   --n24-link: #ff6b6b;
+
+  --n24-btn-solid-bg: #f4f2f0;
+  --n24-btn-solid-text: #141312;
+  --n24-btn-solid-hover-bg: #ffffff;
+  --n24-btn-outline-text: #f4f2f0;
+  --n24-btn-outline-border: #b3ada8;
+  --n24-btn-outline-hover-bg: #f4f2f0;
+  --n24-btn-outline-hover-text: #141312;
+  --n24-btn-muted-text: #b3ada8;
+  --n24-btn-muted-border: #b3ada8;
+  --n24-btn-muted-hover-bg: #b3ada8;
+  --n24-btn-muted-hover-text: #141312;
 
   --n24-positive: #5cc98a;
   --n24-warning: #e0b055;
   --n24-negative: #ff6b6b;
+
+  --bs-danger: #ff6b6b;
+  --bs-danger-rgb: 255, 107, 107;
+  --bs-warning: #e0b055;
+  --bs-warning-rgb: 224, 176, 85;
+  --bs-success: #5cc98a;
+  --bs-success-rgb: 92, 201, 138;
+
+  --bs-secondary-rgb: 179, 173, 168;
+  --bs-tertiary-rgb: 146, 140, 135;
+  --bs-primary-rgb: 255, 77, 79;
+  --bs-info-rgb: 43, 106, 143;
 
   --bs-body-bg: #0e0d0c;
   --bs-body-color: #f4f2f0;
@@ -1186,4 +1234,64 @@ a:hover {
   margin: var(--n24-space-2) var(--n24-space-4) 0;
   color: var(--n24-faint);
   font-size: 0.8125rem;
+}
+
+// --- nút trong dark mode ----------------------------------------------------
+// Bootstrap compile cứng màu của .btn-dark / .btn-outline-dark theo light mode,
+// nên phải gán lại bằng token để đổi theo theme.
+
+.btn-dark {
+  --bs-btn-color: var(--n24-btn-solid-text);
+  --bs-btn-bg: var(--n24-btn-solid-bg);
+  --bs-btn-border-color: var(--n24-btn-solid-bg);
+  --bs-btn-hover-color: var(--n24-btn-solid-text);
+  --bs-btn-hover-bg: var(--n24-btn-solid-hover-bg);
+  --bs-btn-hover-border-color: var(--n24-btn-solid-hover-bg);
+  --bs-btn-active-color: var(--n24-btn-solid-text);
+  --bs-btn-active-bg: var(--n24-btn-solid-hover-bg);
+  --bs-btn-active-border-color: var(--n24-btn-solid-hover-bg);
+  --bs-btn-disabled-color: var(--n24-btn-solid-text);
+  --bs-btn-disabled-bg: var(--n24-btn-solid-bg);
+  --bs-btn-disabled-border-color: var(--n24-btn-solid-bg);
+}
+
+.btn-outline-dark {
+  --bs-btn-color: var(--n24-btn-outline-text);
+  --bs-btn-border-color: var(--n24-btn-outline-border);
+  --bs-btn-hover-color: var(--n24-btn-outline-hover-text);
+  --bs-btn-hover-bg: var(--n24-btn-outline-hover-bg);
+  --bs-btn-hover-border-color: var(--n24-btn-outline-hover-bg);
+  --bs-btn-active-color: var(--n24-btn-outline-hover-text);
+  --bs-btn-active-bg: var(--n24-btn-outline-hover-bg);
+  --bs-btn-active-border-color: var(--n24-btn-outline-hover-bg);
+  --bs-btn-disabled-color: var(--n24-btn-outline-text);
+  --bs-btn-disabled-border-color: var(--n24-btn-outline-border);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--n24-btn-muted-text);
+  --bs-btn-border-color: var(--n24-btn-muted-border);
+  --bs-btn-hover-color: var(--n24-btn-muted-hover-text);
+  --bs-btn-hover-bg: var(--n24-btn-muted-hover-bg);
+  --bs-btn-hover-border-color: var(--n24-btn-muted-hover-bg);
+  --bs-btn-active-color: var(--n24-btn-muted-hover-text);
+  --bs-btn-active-bg: var(--n24-btn-muted-hover-bg);
+  --bs-btn-active-border-color: var(--n24-btn-muted-hover-bg);
+  --bs-btn-disabled-color: var(--n24-btn-muted-text);
+  --bs-btn-disabled-border-color: var(--n24-btn-muted-border);
+}
+
+.btn-primary {
+  --bs-btn-color: var(--n24-accent-contrast);
+  --bs-btn-bg: var(--n24-accent);
+  --bs-btn-border-color: var(--n24-accent);
+  --bs-btn-hover-color: var(--n24-accent-contrast);
+  --bs-btn-hover-bg: var(--n24-accent-hover);
+  --bs-btn-hover-border-color: var(--n24-accent-hover);
+  --bs-btn-active-color: var(--n24-accent-contrast);
+  --bs-btn-active-bg: var(--n24-accent-hover);
+  --bs-btn-active-border-color: var(--n24-accent-hover);
+  --bs-btn-disabled-color: var(--n24-accent-contrast);
+  --bs-btn-disabled-bg: var(--n24-accent);
+  --bs-btn-disabled-border-color: var(--n24-accent);
 }
