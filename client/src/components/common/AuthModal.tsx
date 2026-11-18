@@ -19,6 +19,42 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+interface PasswordFieldProps {
+  id: string;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+}
+
+function PasswordField({ id, value, error, onChange }: PasswordFieldProps) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <Form.Group className="mb-3" controlId={id}>
+      <Form.Label>Mật khẩu</Form.Label>
+      <div className="auth-modal__password">
+        <Form.Control
+          type={visible ? 'text' : 'password'}
+          value={value}
+          isInvalid={Boolean(error)}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <Button
+          type="button"
+          variant="outline-secondary"
+          className="auth-modal__password-toggle"
+          aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          title={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          onClick={() => setVisible((prev) => !prev)}
+        >
+          <i className={`bi ${visible ? 'bi-eye-slash' : 'bi-eye'}`} aria-hidden="true" />
+        </Button>
+        <Form.Control.Feedback type="invalid">{error}</Form.Control.Feedback>
+      </div>
+    </Form.Group>
+  );
+}
+
 export function AuthModal({ show, onClose }: AuthModalProps) {
   const dispatch = useAppDispatch();
   const authError = useAppSelector(selectAuthError);
@@ -115,18 +151,14 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
               <Form.Control.Feedback type="invalid">{fieldErrors.email}</Form.Control.Feedback>
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="auth-login-password">
-              <Form.Label>Mật khẩu</Form.Label>
-              <Form.Control
-                type="password"
-                value={loginForm.password}
-                isInvalid={Boolean(fieldErrors.password)}
-                onChange={(event) =>
-                  setLoginForm((prev) => ({ ...prev, password: event.target.value }))
-                }
-              />
-              <Form.Control.Feedback type="invalid">{fieldErrors.password}</Form.Control.Feedback>
-            </Form.Group>
+            <PasswordField
+              id="auth-login-password"
+              value={loginForm.password}
+              error={fieldErrors.password}
+              onChange={(password) =>
+                setLoginForm((prev) => ({ ...prev, password }))
+              }
+            />
 
             {authError && <p className="auth-modal__error">{authError}</p>}
 
@@ -162,18 +194,14 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
               <Form.Control.Feedback type="invalid">{fieldErrors.email}</Form.Control.Feedback>
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="auth-register-password">
-              <Form.Label>Mật khẩu</Form.Label>
-              <Form.Control
-                type="password"
-                value={registerForm.password}
-                isInvalid={Boolean(fieldErrors.password)}
-                onChange={(event) =>
-                  setRegisterForm((prev) => ({ ...prev, password: event.target.value }))
-                }
-              />
-              <Form.Control.Feedback type="invalid">{fieldErrors.password}</Form.Control.Feedback>
-            </Form.Group>
+            <PasswordField
+              id="auth-register-password"
+              value={registerForm.password}
+              error={fieldErrors.password}
+              onChange={(password) =>
+                setRegisterForm((prev) => ({ ...prev, password }))
+              }
+            />
 
             {authError && <p className="auth-modal__error">{authError}</p>}
 

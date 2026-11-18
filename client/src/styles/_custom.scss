@@ -524,6 +524,24 @@ a:hover {
   margin-bottom: var(--n24-space-3);
 }
 
+.auth-modal__password {
+  position: relative;
+
+  .form-control {
+    padding-right: 2.75rem;
+  }
+}
+
+.auth-modal__password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  height: 100%;
+  padding-inline: 0.75rem;
+  border-radius: 0 var(--n24-radius-control) var(--n24-radius-control) 0;
+}
+
 .app-navbar {
   position: sticky;
   top: 0;
