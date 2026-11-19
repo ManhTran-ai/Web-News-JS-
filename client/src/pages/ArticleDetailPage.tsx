@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -9,8 +9,7 @@ import { recordRead } from '@/store/slices/interactionSlice';
 import { ArticleBody } from '@/components/article/ArticleBody';
 import { ArticleMeta } from '@/components/article/ArticleMeta';
 import { ArticleCard } from '@/components/article/ArticleCard';
-import { CommentSection } from '@/components/article/CommentSection';
-import { ReaderToolbar } from '@/components/article/ReaderToolbar';
+import { LazyCommentSection, LazyReaderToolbar } from '@/components/lazy';
 import { SafeImage } from '@/components/article/SafeImage';
 import { ArticleSkeleton } from '@/components/article/ArticleSkeleton';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -92,7 +91,9 @@ export function ArticleDetailPage() {
             />
           )}
 
-          <ReaderToolbar article={article} contentText={contentText} />
+          <Suspense fallback={null}>
+            <LazyReaderToolbar article={article} contentText={contentText} />
+          </Suspense>
 
           {contentUnavailable && (
             <div className="n24-tint article-detail__notice" role="alert">
@@ -147,7 +148,9 @@ export function ArticleDetailPage() {
             </section>
           )}
 
-          <CommentSection articleId={id} />
+          <Suspense fallback={null}>
+            <LazyCommentSection articleId={id} />
+          </Suspense>
         </>
       ) : (
         <ErrorState

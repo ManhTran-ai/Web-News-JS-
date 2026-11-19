@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { CATEGORY_FALLBACK } from '@/lib/constants';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { AuthModal } from '@/components/common/AuthModal';
+import { LazyAuthModal } from '@/components/common/lazyAuthModal';
 import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
 import { logout, selectCurrentUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import type { Category } from '@/types/article';
@@ -109,7 +109,9 @@ export function AppNavbar() {
         </div>
       </nav>
 
-      <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <Suspense fallback={null}>
+        <LazyAuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      </Suspense>
       <ChangePasswordModal
         show={showChangePassword}
         onClose={() => setShowChangePassword(false)}
