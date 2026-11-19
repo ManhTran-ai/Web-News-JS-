@@ -1,7 +1,8 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { CATEGORY_FALLBACK } from '@/lib/constants';
+import { useArticleSuggestions } from '@/hooks/useArticleSuggestions';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { LazyAuthModal } from '@/components/common/lazyAuthModal';
 import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
@@ -17,6 +18,9 @@ export function AppNavbar() {
   const [keyword, setKeyword] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const suggestions = useArticleSuggestions(keyword);
 
   const menu: Category[] = categories.length > 0 ? categories : [...CATEGORY_FALLBACK];
 
@@ -24,8 +28,22 @@ export function AppNavbar() {
     event.preventDefault();
     const trimmed = keyword.trim();
     if (!trimmed) return;
+    setShowSuggestions(false);
     void navigate(`/tim-kiem?q=${encodeURIComponent(trimmed)}`);
   };
+
+  useEffect(() => {
+    if (!showSuggestions) return undefined;
+
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSuggestions]);
 
   return (
     <header className="app-navbar">
@@ -36,19 +54,53 @@ export function AppNavbar() {
               Tin tức 24h
             </Link>
 
-            <form className="app-navbar__search" role="search" onSubmit={handleSubmit}>
-              <label className="visually-hidden" htmlFor="navbar-search">
-                Tìm kiếm tin tức
-              </label>
-              <input
-                id="navbar-search"
-                className="form-control form-control-sm"
-                type="search"
-                placeholder="Tìm kiếm tin..."
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-              />
-            </form>
+            <div className="app-navbar__search" ref={searchRef}>
+              <form role="search" onSubmit={handleSubmit}>
+                <label className="visually-hidden" htmlFor="navbar-search">
+                  Tìm kiếm tin tức
+                </label>
+                <input
+                  id="navbar-search"
+                  className="form-control form-control-sm"
+                  type="search"
+                  placeholder="Tìm kiếm tin..."
+                  value={keyword}
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={showSuggestions && suggestions.length > 0}
+                  aria-controls="navbar-suggestions"
+                  aria-autocomplete="list"
+                  onChange={(event) => {
+                    setKeyword(event.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                />
+              </form>
+
+              {showSuggestions && suggestions.length > 0 && (
+                <ul
+                  id="navbar-suggestions"
+                  className="app-navbar__suggestions"
+                  role="listbox"
+                  aria-label="Gợi ý tìm kiếm"
+                >
+                  {suggestions.map((article) => (
+                    <li key={article.id} role="option" aria-selected="false">
+                      <Link
+                        to={`/bai-viet/${article.id}`}
+                        onClick={() => {
+                          setShowSuggestions(false);
+                          setKeyword('');
+                        }}
+                      >
+                        {article.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="app-navbar__actions">
               <Link className="app-navbar__saved" to="/da-luu">
@@ -96,6 +148,11 @@ export function AppNavbar() {
             <li>
               <NavLink to="/" end className="app-navbar__cat">
                 Mới nhất
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/noi-bat" className="app-navbar__cat">
+                Nổi bật
               </NavLink>
             </li>
             {menu.map((category) => (

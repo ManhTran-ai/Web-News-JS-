@@ -60,6 +60,9 @@ export function AppFooter() {
                 <Link to="/chuyen-muc">Tất cả chuyên mục</Link>
               </li>
               <li>
+                <Link to="/noi-bat">Tin nổi bật</Link>
+              </li>
+              <li>
                 <Link to="/tim-kiem">Tìm kiếm</Link>
               </li>
               <li>
