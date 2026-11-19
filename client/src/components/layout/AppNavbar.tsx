@@ -100,6 +100,12 @@ export function AppNavbar() {
                   ))}
                 </ul>
               )}
+
+              <span className="visually-hidden" role="status" aria-live="polite">
+                {showSuggestions && suggestions.length > 0
+                  ? `Có ${suggestions.length} gợi ý tìm kiếm.`
+                  : ''}
+              </span>
             </div>
 
             <div className="app-navbar__actions">

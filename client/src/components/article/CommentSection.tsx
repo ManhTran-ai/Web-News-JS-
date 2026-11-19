@@ -217,6 +217,7 @@ function CommentItem({ comment, currentUserId, onLike, onRemove }: CommentItemPr
           type="button"
           className={`btn btn-sm btn-link comment-item__like${liked ? ' is-liked' : ''}`}
           aria-pressed={liked}
+          aria-label={liked ? 'Bỏ thích bình luận' : 'Thích bình luận'}
           onClick={onLike}
         >
           <i
@@ -227,7 +228,12 @@ function CommentItem({ comment, currentUserId, onLike, onRemove }: CommentItemPr
         </button>
 
         {isOwner && onRemove && (
-          <button type="button" className="btn btn-sm btn-link text-danger" onClick={onRemove}>
+          <button
+            type="button"
+            className="btn btn-sm btn-link text-danger"
+            aria-label={`Xoá bình luận của bạn`}
+            onClick={onRemove}
+          >
             Xoá
           </button>
         )}

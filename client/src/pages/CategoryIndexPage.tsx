@@ -60,7 +60,7 @@ export function CategoryIndexPage() {
     <Container className="py-4">
       <title>Tin tức 24h — Chuyên mục</title>
       <h1 className="h3 mb-1">Chuyên mục</h1>
-      <p className="text-secondary mb-4">
+      <p className="text-secondary mb-4" role="status" aria-live="polite">
         Chọn một chuyên mục để xem tin mới nhất của mục đó.
       </p>
 

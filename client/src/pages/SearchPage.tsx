@@ -102,7 +102,7 @@ export function SearchPage() {
       <title>Tin tức 24h — Tìm kiếm</title>
 
       <h1 className="h3 mb-1">Tìm kiếm</h1>
-      <p className="text-secondary mb-4">
+      <p className="text-secondary mb-4" role="status" aria-live="polite">
         {meta ? `Tìm thấy ${meta.total} bài viết` : 'Nhập từ khoá để tìm kiếm'}
       </p>
 

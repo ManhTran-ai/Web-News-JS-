@@ -78,7 +78,7 @@ export function CategoryPage() {
       <div className="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
           <h1 className="h3 mb-1">{category?.name ?? slug}</h1>
-          <p className="text-secondary mb-0">
+          <p className="text-secondary mb-0" role="status" aria-live="polite">
             {meta ? `${meta.total} bài viết` : 'Đang tải...'}
           </p>
         </div>

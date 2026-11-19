@@ -28,7 +28,7 @@ export function FeaturedPage() {
       <title>Tin tức 24h — Tin nổi bật</title>
 
       <h1 className="h3 mb-1">Tin nổi bật</h1>
-      <p className="text-secondary mb-4">
+      <p className="text-secondary mb-4" role="status" aria-live="polite">
         {meta ? `${meta.total} bài được chọn nổi bật từ nhiều nguồn tin` : 'Đang tải...'}
       </p>
 

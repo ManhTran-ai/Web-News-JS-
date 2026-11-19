@@ -45,9 +45,21 @@ export function ChangePasswordModal({ show, onClose }: ChangePasswordModalProps)
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered contentClassName="auth-modal">
+    <Modal
+      show={show}
+      onHide={handleClose}
+      centered
+      contentClassName="auth-modal"
+      aria-labelledby="change-password-modal-title"
+      autoFocus
+      enforceFocus
+      restoreFocus
+      restoreFocusOptions={{ preventScroll: true }}
+    >
       <Modal.Header closeButton>
-        <Modal.Title className="fs-5">Đổi mật khẩu</Modal.Title>
+        <Modal.Title id="change-password-modal-title" className="fs-5">
+          Đổi mật khẩu
+        </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
@@ -76,8 +88,16 @@ export function ChangePasswordModal({ show, onClose }: ChangePasswordModalProps)
             <Form.Control.Feedback type="invalid">{fieldErrors.password}</Form.Control.Feedback>
           </Form.Group>
 
-          {authError && <p className="auth-modal__error">{authError}</p>}
-          {success && <p className="auth-modal__reset-success">{success}</p>}
+          {authError && (
+            <p className="auth-modal__error" role="alert">
+              {authError}
+            </p>
+          )}
+          {success && (
+            <p className="auth-modal__reset-success" role="status">
+              {success}
+            </p>
+          )}
 
           <Button type="submit" variant="dark" className="w-100">
             Lưu mật khẩu mới
