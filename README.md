@@ -59,8 +59,8 @@ server rồi render ngay trong trang, kèm dòng ghi nguồn và link bài gốc
 │                                                                          │
 │  page ──dispatch(thunk)──► api/endpoints ──► axios ──► server          │
 │    │                                                                     │
-│    └──useSelector──► slice (articles / categories / articleContent /     │
-│                         bookmarks)                                       │
+│    └──useSelector──► slice (articles / categories / sources /              │
+│                         articleContent / bookmarks / auth / interaction)  │
 │                                                                          │
 │  router.tsx: RootLayout (layout route) ──► Outlet ──► các page         │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -140,15 +140,17 @@ Tất cả endpoint GET, tiền tố `/api`. Xem chi tiết tại [`docs/API.md`
 | `GET /api/health` | Trạng thái server, số bài, trạng thái từng nguồn |
 | `GET /api/categories` | Danh sách chuyên mục kèm số bài |
 | `GET /api/sources` | Danh sách nguồn tin kèm trạng thái |
-| `GET /api/articles` | Danh sách bài, lọc theo `category`, `source`, `q` |
+| `GET /api/articles` | Danh sách bài, lọc theo `category`, `source`, `q`, `since`, `until` |
 | `GET /api/articles/latest` | Bài mới nhất |
 | `GET /api/articles/featured` | Bài nổi bật (có ảnh, xen kẽ nhiều nguồn) |
+| `GET /api/articles/rss.xml` | Feed RSS tổng hợp của chính website |
 | `GET /api/articles/:id` | Chi tiết một bài |
 | `GET /api/articles/:id/related` | Bài liên quan (cùng chuyên mục) |
 | `GET /api/articles/:id/content` | **Nội dung đầy đủ** của bài (crawl nếu chưa có trong cache) |
 | `GET /api/search?q=` | Tìm kiếm, không phân biệt dấu tiếng Việt |
+| `POST /api/refresh` | Buộc quét lại toàn bộ RSS |
 
-Mã lỗi: `VALIDATION_ERROR` 400 · `NOT_FOUND` 404 · `CONTENT_UNAVAILABLE` 502 · `INTERNAL_ERROR` 500.
+Mã lỗi: `VALIDATION_ERROR` 400 · `NOT_FOUND` 404 · `REFRESH_IN_PROGRESS` 429 · `CONTENT_UNAVAILABLE` 502 · `INTERNAL_ERROR` 500.
 
 ## 7. Thêm một nguồn RSS mới
 
