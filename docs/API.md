@@ -23,8 +23,14 @@ Lỗi trả về `{ error: { code, message } }`:
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | Thiếu hoặc sai tham số truy vấn |
 | 404 | `NOT_FOUND` | Bài viết không tồn tại hoặc đã hết hạn lưu giữ |
+| 429 | `REFRESH_IN_PROGRESS` | Đang làm mới dữ liệu, thử lại sau |
 | 502 | `CONTENT_UNAVAILABLE` | Không crawl được nội dung bài từ trang báo |
 | 500 | `INTERNAL_ERROR` | Lỗi không lường trước |
+
+### Header chung
+
+Mọi response đều có `X-Request-Id` để đối chiếu log server. Các endpoint trả danh sách
+kèm `ETag` và `Cache-Control`; gửi lại `If-None-Match` đúng ETag sẽ nhận `304 Not Modified`.
 
 ---
 
@@ -101,8 +107,13 @@ Danh sách bài, có thể lọc theo `category`, `source`, `q` và phân trang.
 | `category` | string | — | slug chuyên mục, xem `/api/categories` |
 | `source` | string | — | id nguồn, xem `/api/sources` |
 | `q` | string | — | từ khoá, không phân biệt dấu tiếng Việt |
+| `since` | ISO datetime | — | chỉ lấy bài đăng từ thời điểm này trở đi |
+| `until` | ISO datetime | — | chỉ lấy bài đăng trước thời điểm này |
 | `page` | number ≥ 1 | `1` | số trang |
 | `limit` | number 1–50 | `20` | số bài mỗi trang |
+
+> Khi có `q`, kết quả được xếp hạng theo độ liên quan (trùng tiêu đề > trùng tóm tắt)
+> rồi mới tới thời gian đăng.
 
 ```bash
 curl "http://localhost:4000/api/articles?category=the-thao&limit=5"
@@ -238,3 +249,61 @@ curl "http://localhost:4000/api/search?q=vi%E1%BB%87t%20nam&limit=5"
 ```
 
 Phản hồi giống `GET /api/articles`.
+
+---
+
+## `GET /api/articles/rss.xml`
+
+Feed RSS tổng hợp của chính website, dùng để đăng ký nguồn hoặc import vào trình đọc.
+Nhận `limit` (mặc định `20`, tối đa `50`) và `category`.
+
+```bash
+curl "http://localhost:4000/api/articles/rss.xml?limit=10&category=the-thao"
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Tin tức 24h</title>
+    <link>http://localhost:4000</link>
+    <description>Tổng hợp tin tức từ VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, VietnamNet</description>
+    <language>vi</language>
+    <item>
+      <title>Tiêu đề bài viết</title>
+      <link>http://localhost:4000/bai-viet/676da4cfe208015e</link>
+      <guid isPermaLink="false">676da4cfe208015e</guid>
+      <pubDate>Sun, 01 Nov 2026 09:12:00 GMT</pubDate>
+      <category>Thể thao</category>
+      <source url="https://vnexpress.net/bai-viet-123.html">VnExpress</source>
+      <description><![CDATA[Tóm tắt bài viết.]]></description>
+    </item>
+  </channel>
+</rss>
+```
+
+---
+
+## `POST /api/refresh`
+
+Buộc server quét lại toàn bộ RSS, cập nhật store và ghi snapshot. Server cũng tự gọi
+endpoint này theo lịch `REFRESH_CRON` (mặc định `*/5 * * * *`).
+
+Nếu đang có một lượt refresh chạy, trả về `429 REFRESH_IN_PROGRESS`.
+
+```bash
+curl -X POST "http://localhost:4000/api/refresh"
+```
+
+```json
+{
+  "data": {
+    "startedAt": "2026-11-01T12:10:07.894Z",
+    "finishedAt": "2026-11-01T12:10:12.301Z",
+    "added": 118,
+    "feedsOk": 59,
+    "feedsFailed": 0,
+    "sources": [{ "id": "vnexpress", "name": "VnExpress", "ok": true, "count": 300 }]
+  }
+}
+```
