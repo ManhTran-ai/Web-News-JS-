@@ -592,3 +592,135 @@ describe('articlesSlice - phân trang', () => {
     expect(selectListIds(store.getState(), listKeyCategory('thoi-su', 2))).toEqual(['a2']);
   });
 });
+
+describe('articlesSlice - TTL 5 phút + prefetch trang kế tiếp (tuần 4 #1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('cache danh sách còn hiệu lực sau 4 phút', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(endpoints.getArticles).mockResolvedValue({
+        data: [makeArticle()],
+        meta: META,
+      });
+
+      const store = makeStore();
+      await store.dispatch(fetchByCategory({ category: 'thoi-su' }));
+
+      vi.setSystemTime(Date.now() + 4 * 60_000);
+      await store.dispatch(fetchByCategory({ category: 'thoi-su' }));
+
+      expect(endpoints.getArticles).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('cache danh sách hết hạn sau 5 phút', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(endpoints.getArticles).mockResolvedValue({
+        data: [makeArticle()],
+        meta: META,
+      });
+
+      const store = makeStore();
+      await store.dispatch(fetchByCategory({ category: 'thoi-su' }));
+
+      vi.setSystemTime(Date.now() + 5 * 60_000 + 1);
+      await store.dispatch(fetchByCategory({ category: 'thoi-su' }));
+
+      expect(endpoints.getArticles).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tải trước trang kế tiếp khi còn trang sau', async () => {
+    vi.mocked(endpoints.getArticles).mockResolvedValue({
+      data: [makeArticle()],
+      meta: { ...META, page: 1, total: 45, totalPages: 3 },
+    });
+
+    const store = makeStore();
+    await store.dispatch(fetchByCategory({ category: 'thoi-su', page: 1 }));
+
+    await vi.waitFor(() => {
+      expect(selectListIds(store.getState(), listKeyCategory('thoi-su', 2))).toEqual(['a1']);
+    });
+    expect(endpoints.getArticles).toHaveBeenCalledWith({
+      category: 'thoi-su',
+      source: undefined,
+      page: 2,
+      limit: 20,
+    });
+  });
+
+  it('không tải trước khi trang hiện tại là trang cuối', async () => {
+    vi.mocked(endpoints.getArticles).mockResolvedValue({
+      data: [makeArticle()],
+      meta: { ...META, page: 3, total: 45, totalPages: 3 },
+    });
+
+    const store = makeStore();
+    await store.dispatch(fetchByCategory({ category: 'thoi-su', page: 3 }));
+
+    expect(endpoints.getArticles).toHaveBeenCalledTimes(1);
+    expect(selectListIds(store.getState(), listKeyCategory('thoi-su', 4))).toEqual([]);
+  });
+
+  it('trang kế tiếp vào cache dùng chung key với trang được tải trực tiếp', async () => {
+    vi.mocked(endpoints.getArticles).mockResolvedValue({
+      data: [makeArticle({ id: 'a1' })],
+      meta: { ...META, page: 1, total: 45, totalPages: 3 },
+    });
+
+    const store = makeStore();
+    await store.dispatch(fetchByCategory({ category: 'thoi-su', page: 1 }));
+    await vi.waitFor(() => {
+      expect(selectListEntry(store.getState(), listKeyCategory('thoi-su', 2)).status).toBe(
+        'succeeded',
+      );
+    });
+
+    const callsBefore = vi.mocked(endpoints.getArticles).mock.calls.length;
+    await store.dispatch(fetchByCategory({ category: 'thoi-su', page: 2 }));
+
+    expect(endpoints.getArticles).toHaveBeenCalledTimes(callsBefore);
+    expect(selectListIds(store.getState(), listKeyCategory('thoi-su', 2))).toEqual(['a1']);
+  });
+
+  it('tải trước kết quả tìm kiếm cũng dùng chung cache với trang được tải', async () => {
+    vi.mocked(endpoints.getArticles).mockResolvedValue({
+      data: [makeArticle({ id: 'a1' })],
+      meta: { ...META, page: 1, total: 45, totalPages: 3 },
+    });
+
+    const store = makeStore();
+    await store.dispatch(queryArticles({ q: 'bong da', page: 2, limit: 20 }));
+
+    await vi.waitFor(() => {
+      expect(selectListIds(store.getState(), listKeyQuery({ q: 'bong da', page: 3 }))).toEqual([
+        'a1',
+      ]);
+    });
+  });
+
+  it('số prefetch đồng thời bị giới hạn', async () => {
+    vi.mocked(endpoints.getArticles).mockResolvedValue({
+      data: [makeArticle()],
+      meta: { ...META, page: 1, total: 450, totalPages: 45 },
+    });
+
+    const store = makeStore();
+    for (const category of ['a', 'b', 'c', 'd', 'e', 'f', 'g']) {
+      await store.dispatch(fetchByCategory({ category, page: 1 }));
+    }
+
+    await vi.waitFor(() => {
+      expect(Object.keys(store.getState().articles.prefetching).length).toBeLessThanOrEqual(5);
+    });
+  });
+});
