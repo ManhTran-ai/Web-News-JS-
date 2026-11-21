@@ -1,16 +1,11 @@
 import { http } from './http';
+import type { RefreshResponse, RefreshSummary } from '@/types/api';
 
 const REFRESH_COOLDOWN_MS = 30_000;
 const REFRESH_RETRY_DELAYS_MS = [1_000, 3_000, 10_000];
 const REFRESH_RATE_LIMIT_STATUS = 429;
 
-export interface RefreshSummary {
-  startedAt: string;
-  finishedAt: string;
-  added: number;
-  feedsOk: number;
-  feedsFailed: number;
-}
+export type { RefreshSummary };
 
 export class RefreshCooldownError extends Error {
   constructor() {
@@ -31,7 +26,7 @@ function statusOf(error: unknown): number | undefined {
 }
 
 async function callRefresh(): Promise<RefreshSummary> {
-  const response = await http.post<{ data: RefreshSummary }>('/refresh');
+  const response = await http.post<RefreshResponse>('/refresh');
   return response.data.data;
 }
 
