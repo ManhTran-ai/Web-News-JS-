@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { PasswordResetForm } from '@/components/common/PasswordResetForm';
 import {
   clearAuthError,
+  clearPasswordReset,
   login,
   register,
   selectAuthError,
@@ -65,6 +67,7 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ fullName: '', email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     if (show) {
@@ -83,6 +86,19 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
     setMode(next);
     setFieldErrors({});
     dispatch(clearAuthError());
+  };
+
+  const openReset = (): void => {
+    setShowReset(true);
+    setFieldErrors({});
+    dispatch(clearAuthError());
+  };
+
+  const closeReset = (): void => {
+    setShowReset(false);
+    setFieldErrors({});
+    dispatch(clearAuthError());
+    dispatch(clearPasswordReset());
   };
 
   const handleLogin = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -109,11 +125,15 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
     <Modal show={show} onHide={onClose} centered contentClassName="auth-modal">
       <Modal.Header closeButton>
         <Modal.Title className="fs-5">
-          {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+          {showReset ? 'Quên mật khẩu' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
+        {showReset ? (
+          <PasswordResetForm onDone={closeReset} />
+        ) : (
+          <>
         <div className="auth-modal__tabs" role="tablist">
           <button
             type="button"
@@ -165,6 +185,10 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
             <Button type="submit" variant="dark" className="w-100">
               Đăng nhập
             </Button>
+
+            <button type="button" className="auth-modal__link" onClick={openReset}>
+              Quên mật khẩu?
+            </button>
           </Form>
         ) : (
           <Form onSubmit={handleRegister} noValidate>
@@ -209,6 +233,8 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
               Tạo tài khoản
             </Button>
           </Form>
+        )}
+          </>
         )}
       </Modal.Body>
     </Modal>

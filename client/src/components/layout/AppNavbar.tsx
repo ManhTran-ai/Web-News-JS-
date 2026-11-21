@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { CATEGORY_FALLBACK } from '@/lib/constants';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { AuthModal } from '@/components/common/AuthModal';
+import { ChangePasswordModal } from '@/components/common/ChangePasswordModal';
 import { logout, selectCurrentUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import type { Category } from '@/types/article';
 
@@ -15,6 +16,7 @@ export function AppNavbar() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [keyword, setKeyword] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const menu: Category[] = categories.length > 0 ? categories : [...CATEGORY_FALLBACK];
 
@@ -60,6 +62,13 @@ export function AppNavbar() {
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-dark"
+                    onClick={() => setShowChangePassword(true)}
+                  >
+                    Đổi mật khẩu
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-dark"
                     onClick={() => dispatch(logout())}
                   >
                     Đăng xuất
@@ -101,6 +110,10 @@ export function AppNavbar() {
       </nav>
 
       <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <ChangePasswordModal
+        show={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </header>
   );
 }

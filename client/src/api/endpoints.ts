@@ -104,3 +104,13 @@ export async function getRSS(category?: string, limit = 20): Promise<string> {
   });
   return response.data;
 }
+
+/** Gửi mã bảo mật đặt lại mật khẩu tới email của người dùng. */
+export async function requestPasswordResetCode(email: string): Promise<void> {
+  await http.post('/auth/password-reset/request', { email });
+}
+
+/** Kiểm tra mã bảo mật người dùng vừa nhập. */
+export async function verifyPasswordResetCode(email: string, code: string): Promise<void> {
+  await http.post('/auth/password-reset/verify', { email, code });
+}
