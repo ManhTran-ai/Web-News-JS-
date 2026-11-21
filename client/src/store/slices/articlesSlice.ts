@@ -16,6 +16,7 @@ import {
   searchArticles as searchArticlesApi,
 } from '@/api/endpoints';
 import { toApiError } from '@/api/http';
+import { requestRefreshOnce, type RefreshSummary } from '@/api/refreshQueue';
 import { parseRssItems, type RssItem } from '@/lib/rss';
 import {
   HIGH_RELEVANCE_COUNT,
@@ -267,6 +268,13 @@ function pruneSearchLists(state: ArticlesState): void {
  * Chỉ được gọi sau khi hết debounce nên URL không nhảy theo từng ký tự gõ.
  */
 export const commitSearchKeyword = createAction<string>('articles/commitSearchKeyword');
+
+export const refreshArticles = createAsyncThunk<RefreshSummary, void, ThunkConfig>(
+  'articles/refresh',
+  async () => {
+    return requestRefreshOnce();
+  },
+);
 
 export const fetchLatest = createAsyncThunk<
   Awaited<ReturnType<typeof getLatest>>,
@@ -588,6 +596,12 @@ const articlesSlice = createSlice({
     builder
       .addCase(commitSearchKeyword, (state, action) => {
         state.activeQuery = action.payload || null;
+      })
+
+      .addCase(refreshArticles.fulfilled, (state) => {
+        for (const key of Object.keys(state.lists)) {
+          state.lists[key] = { ...emptyEntry };
+        }
       })
 
       .addCase(fetchLatest.pending, (state) => {

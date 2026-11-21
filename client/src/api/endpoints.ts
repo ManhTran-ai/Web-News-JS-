@@ -1,4 +1,5 @@
 import { http } from './http';
+import type { RefreshSummary } from './refreshQueue';
 import type {
   ApiItem,
   ApiList,
@@ -103,6 +104,11 @@ export async function getRSS(category?: string, limit = 20): Promise<string> {
     responseType: 'text',
   });
   return response.data;
+}
+
+export async function postRefresh(): Promise<RefreshSummary> {
+  const response = await http.post<{ data: RefreshSummary }>('/refresh');
+  return response.data.data;
 }
 
 /** Gửi mã bảo mật đặt lại mật khẩu tới email của người dùng. */

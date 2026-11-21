@@ -1,7 +1,9 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiErrorPayload } from '@/types/article';
+import { requestRefreshOnce } from './refreshQueue';
 
 const RESPONSE_CACHE_LIMIT = 200;
+const RETRIABLE_STATUSES = new Set([500, 502, 503, 504]);
 
 interface CachedResponse {
   etag: string;
@@ -66,16 +68,37 @@ http.interceptors.response.use(
 
     return response;
   },
-  (error: unknown) => {
+  async (error: unknown) => {
     if (axios.isAxiosError(error) && error.response) {
       const requestId = error.response.headers['x-request-id'];
       if (requestId) {
         (error as AxiosError & { requestId?: string }).requestId = requestId;
       }
     }
+
+    const config = (error as AxiosError | undefined)?.config;
+    if (config && shouldRefreshAndRetry(error, config)) {
+      config.headers = AxiosHeaders.from(config.headers);
+      config.headers.set('X-Retry-After-Refresh', '1');
+      try {
+        await requestRefreshOnce();
+      } catch {
+        return Promise.reject(error);
+      }
+      return http.request(config);
+    }
     return Promise.reject(error);
   },
 );
+
+function shouldRefreshAndRetry(error: unknown, config: InternalAxiosRequestConfig): boolean {
+  if ((config.method ?? 'get').toUpperCase() !== 'GET') return false;
+  if (config.headers?.get('X-Retry-After-Refresh') === '1') return false;
+
+  const status = (error as AxiosError | undefined)?.response?.status;
+  if (status === undefined) return true;
+  return RETRIABLE_STATUSES.has(status);
+}
 
 export class ApiError extends Error {
   readonly code: string;
