@@ -7,18 +7,11 @@ import { cacheService } from './cache.service.js';
 import { fetchFeed } from './feed.service.js';
 import { prefetchContent } from './content.prefetch.js';
 import { writeSnapshot } from './snapshot.service.js';
-import type { Article, SourceStatus } from '../types/article.js';
+import type { Article, RefreshSummary, SourceStatus } from '../types/article.js';
 
 const FEED_CONCURRENCY = 5;
 
-export interface RefreshSummary {
-  startedAt: string;
-  finishedAt: string;
-  added: number;
-  feedsOk: number;
-  feedsFailed: number;
-  sources: SourceStatus[];
-}
+export type { RefreshSummary };
 
 let lastRefreshAt: string | null = null;
 let lastSummary: RefreshSummary | null = null;

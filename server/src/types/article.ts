@@ -58,6 +58,15 @@ export interface SourceStatus {
   error?: string;
 }
 
+export interface RefreshSummary {
+  startedAt: string;
+  finishedAt: string;
+  added: number;
+  feedsOk: number;
+  feedsFailed: number;
+  sources: SourceStatus[];
+}
+
 export interface User {
   id: string;
   fullName: string;

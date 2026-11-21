@@ -51,5 +51,8 @@ skills-lock.json
 # Bản README mở rộng (12 mục) - chỉ lưu local
 docs/README-ban-12-muc.md
 
+# Mô tả kiến trúc nội bộ - chỉ lưu local, KHÔNG lên GitHub
+project-context.md
+
 # Thư mục tạm khi verify / simulate
 .tmp-*/

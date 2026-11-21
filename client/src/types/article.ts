@@ -32,23 +32,8 @@ export interface ListMeta {
   updatedAt: string;
 }
 
-export interface ApiList<T> {
-  data: T[];
-  meta: ListMeta;
-}
-
-export interface ApiItem<T> {
-  data: T;
-}
-
-export interface ApiErrorPayload {
-  error: {
-    code: string;
-    message: string;
-  };
-}
-
-export type ApiError = ApiErrorPayload;
+export type { ApiErrorBody, ApiErrorCode, ApiErrorPayload } from './api';
+export type { ApiItemResponse as ApiItem, ApiListResponse as ApiList } from './api';
 
 export interface Source {
   id: string;

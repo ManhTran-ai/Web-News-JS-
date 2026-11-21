@@ -16,11 +16,14 @@ import {
   searchArticles as searchArticlesApi,
 } from '@/api/endpoints';
 import { toApiError } from '@/api/http';
+import { requestRefreshOnce, type RefreshSummary } from '@/api/refreshQueue';
 import { parseRssItems, type RssItem } from '@/lib/rss';
 import {
   HIGH_RELEVANCE_COUNT,
   LATEST_CACHE_TTL_MS,
   LIST_CACHE_TTL_MS,
+  MAX_PREFETCH_ENTRIES,
+  PREFETCH_PAGE_AHEAD,
   RELATED_ARTICLES_COUNT,
   RELATED_CACHE_TTL_MS,
   SEARCH_DEBOUNCE_MS,
@@ -62,6 +65,7 @@ interface ArticlesState extends EntityState<Article, string> {
    * Chỉ cập nhật sau khi hết thời gian debounce nên URL không nhảy theo từng ký tự gõ.
    */
   activeQuery: string | null;
+  prefetching: Record<string, true>;
 }
 
 const articlesAdapter = createEntityAdapter<Article>();
@@ -86,6 +90,7 @@ const initialState: ArticlesState = articlesAdapter.getInitialState({
   lists: {},
   rssFeeds: {},
   activeQuery: null,
+  prefetching: {},
 });
 
 export const LIST_LATEST = 'latest';
@@ -264,6 +269,13 @@ function pruneSearchLists(state: ArticlesState): void {
  */
 export const commitSearchKeyword = createAction<string>('articles/commitSearchKeyword');
 
+export const refreshArticles = createAsyncThunk<RefreshSummary, void, ThunkConfig>(
+  'articles/refresh',
+  async () => {
+    return requestRefreshOnce();
+  },
+);
+
 export const fetchLatest = createAsyncThunk<
   Awaited<ReturnType<typeof getLatest>>,
   number | undefined,
@@ -300,6 +312,44 @@ export const fetchByCategory = createAsyncThunk<
   ThunkConfig
 >(
   'articles/fetchByCategory',
+  async (params, { dispatch }) => {
+    const result = await getArticles({
+      category: params.category,
+      source: params.source,
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+    });
+
+    const page = params.page ?? 1;
+    if (result.meta.page < result.meta.totalPages) {
+      void dispatch(
+        prefetchNextPage({
+          category: params.category,
+          source: params.source,
+          page: page + PREFETCH_PAGE_AHEAD,
+          limit: params.limit ?? 20,
+        }),
+      );
+    }
+
+    return result;
+  },
+  {
+    condition: (params, { getState }) =>
+      !isCacheFresh(
+        getState(),
+        listKeyCategory(params.category, params.page ?? 1, params.source),
+        LIST_CACHE_TTL_MS,
+      ),
+  },
+);
+
+export const prefetchNextPage = createAsyncThunk<
+  Awaited<ReturnType<typeof getArticles>>,
+  { category: string; source?: string; limit?: number; page?: number },
+  ThunkConfig
+>(
+  'articles/prefetchNextPage',
   async (params) => {
     return getArticles({
       category: params.category,
@@ -309,12 +359,13 @@ export const fetchByCategory = createAsyncThunk<
     });
   },
   {
-    condition: (params, { getState }) =>
-      !isCacheFresh(
-        getState(),
-        listKeyCategory(params.category, params.page ?? 1, params.source),
-        LIST_CACHE_TTL_MS,
-      ),
+    condition: (params, { getState }) => {
+      const key = listKeyCategory(params.category, params.page ?? 1, params.source);
+      if (isCacheFresh(getState(), key, LIST_CACHE_TTL_MS)) return false;
+      if (getState().articles.prefetching[key]) return false;
+      if (Object.keys(getState().articles.prefetching).length >= MAX_PREFETCH_ENTRIES) return false;
+      return true;
+    },
   },
 );
 
@@ -391,7 +442,14 @@ export const queryArticles = createAsyncThunk<
         // Từ khoá chính thức được chấp nhận sau debounce.
         dispatch(commitSearchKeyword(query.q ?? ''));
       }
-      return await getArticles({ page: 1, limit: 20, ...query }, controller.signal);
+      const result = await getArticles({ page: 1, limit: 20, ...query }, controller.signal);
+
+      const page = query.page ?? 1;
+      if (result.meta.page < result.meta.totalPages) {
+        void dispatch(prefetchNextQueryPage({ ...query, page: page + PREFETCH_PAGE_AHEAD }));
+      }
+
+      return result;
     } catch (error) {
       throw isAbortError(error) ? { name: 'CanceledError' } : error;
     } finally {
@@ -401,6 +459,26 @@ export const queryArticles = createAsyncThunk<
   {
     condition: (query, { getState }) =>
       !isCacheFresh(getState(), listKeyQuery(query), LIST_CACHE_TTL_MS),
+  },
+);
+
+export const prefetchNextQueryPage = createAsyncThunk<
+  Awaited<ReturnType<typeof getArticles>>,
+  ArticleQuery,
+  ThunkConfig
+>(
+  'articles/prefetchNextQueryPage',
+  async (query) => {
+    return getArticles({ page: 1, limit: 20, ...query });
+  },
+  {
+    condition: (query, { getState }) => {
+      const key = listKeyQuery(query);
+      if (isCacheFresh(getState(), key, LIST_CACHE_TTL_MS)) return false;
+      if (getState().articles.prefetching[key]) return false;
+      if (Object.keys(getState().articles.prefetching).length >= MAX_PREFETCH_ENTRIES) return false;
+      return true;
+    },
   },
 );
 
@@ -520,6 +598,12 @@ const articlesSlice = createSlice({
         state.activeQuery = action.payload || null;
       })
 
+      .addCase(refreshArticles.fulfilled, (state) => {
+        for (const key of Object.keys(state.lists)) {
+          state.lists[key] = { ...emptyEntry };
+        }
+      })
+
       .addCase(fetchLatest.pending, (state) => {
         setLoading(state, LIST_LATEST);
       })
@@ -571,6 +655,32 @@ const articlesSlice = createSlice({
         setFailed(state, listKeyCategoryLatest(action.meta.arg.category), action.error);
       })
 
+      .addCase(prefetchNextPage.pending, (state, action) => {
+        const key = listKeyCategory(
+          action.meta.arg.category,
+          action.meta.arg.page ?? 1,
+          action.meta.arg.source,
+        );
+        state.prefetching[key] = true;
+      })
+      .addCase(prefetchNextPage.fulfilled, (state, action) => {
+        const key = listKeyCategory(
+          action.meta.arg.category,
+          action.meta.arg.page ?? 1,
+          action.meta.arg.source,
+        );
+        delete state.prefetching[key];
+        setSucceeded(state, key, action.payload);
+      })
+      .addCase(prefetchNextPage.rejected, (state, action) => {
+        const key = listKeyCategory(
+          action.meta.arg.category,
+          action.meta.arg.page ?? 1,
+          action.meta.arg.source,
+        );
+        delete state.prefetching[key];
+      })
+
       .addCase(searchArticles.pending, (state, action) => {
         setLoading(
           state,
@@ -608,6 +718,18 @@ const articlesSlice = createSlice({
       })
       .addCase(queryArticles.rejected, (state, action) => {
         handleRejected(state, listKeyQuery(action.meta.arg), action);
+      })
+
+      .addCase(prefetchNextQueryPage.pending, (state, action) => {
+        state.prefetching[listKeyQuery(action.meta.arg)] = true;
+      })
+      .addCase(prefetchNextQueryPage.fulfilled, (state, action) => {
+        const key = listKeyQuery(action.meta.arg);
+        delete state.prefetching[key];
+        setSucceeded(state, key, action.payload);
+      })
+      .addCase(prefetchNextQueryPage.rejected, (state, action) => {
+        delete state.prefetching[listKeyQuery(action.meta.arg)];
       })
 
       .addCase(fetchArticleById.fulfilled, (state, action) => {
@@ -691,5 +813,8 @@ export const selectRssEntry = (state: RootState, category?: string): RssEntry =>
 
 export const selectRssItems = (state: RootState, category?: string): RssItem[] =>
   selectRssEntry(state, category).items;
+
+export const selectIsPrefetching = (state: RootState, key: string): boolean =>
+  state.articles.prefetching[key] === true;
 
 export { selectArticlesEntities };
