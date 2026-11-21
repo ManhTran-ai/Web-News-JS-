@@ -340,7 +340,7 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 | 3 | `feat(client): xu ly 304 tu cache khi offline` | Mất mạng mà server trả 304 → trả cache cũ | `api/http.ts` | ✅ xong (`d483f36`) |
 | 4 | `refactor(client): tach api client + tao types tuong tac API` | Chuẩn hoá `ApiError`, type response của `/related`, `/rss.xml`, `/refresh` | `types/article.ts`, `api/*` | ✅ xong (`98c71b7`) |
 | 5 | `feat(client): api/http - hien thi X-Request-Id khi loi de debug` | Đọc header `X-Request-Id` trong response lỗi, log kèm để đối chiếu log server | `api/http.ts` | ✅ xong (`67b0416`) |
-| 6 | `docs(client): comment API contract + huong dan chay cho nhom` | Ghi rõ endpoint nào dùng ở đâu, cách chạy song song client + server | `docs/API.md`, `README.md` | ✅ xong (`3b38931`) |
+| 6 | `docs(client): comment API contract + huong dan chay cho nhom` | Ghi rõ endpoint nào dùng ở đâu, cách chạy song song client + server | `docs/API.md`, `README.md` | ✅ xong (`f3df86d`) |
 
 ### 🟢 TÀI (5 commit)
 
