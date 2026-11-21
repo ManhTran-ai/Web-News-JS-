@@ -9,7 +9,7 @@ export class ApiError extends Error {
   readonly requestId?: string;
 
   constructor(code: string, message: string, status: number, requestId?: string) {
-    super(message);
+    super(requestId ? `${message} (Mã yêu cầu: ${requestId})` : message);
     this.name = 'ApiError';
     this.code = code;
     this.status = status;

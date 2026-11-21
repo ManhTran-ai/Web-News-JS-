@@ -97,6 +97,7 @@ http.interceptors.response.use(
     }
 
     const config = (error as AxiosError | undefined)?.config;
+    logApiError(error, config);
 
     if (config && isOfflineError(error)) {
       const cached = responseCache.get(cacheKey(config));
@@ -128,4 +129,21 @@ http.interceptors.response.use(
 
 export function clearResponseCache(): void {
   responseCache.clear();
+}
+
+export function logApiError(error: unknown, config?: InternalAxiosRequestConfig): void {
+  const axiosError = error as AxiosError | undefined;
+  const requestId = (axiosError as AxiosError & { requestId?: string })?.requestId;
+  const status = axiosError?.response?.status;
+  const method = (config?.method ?? 'get').toUpperCase();
+  const url = `${config?.baseURL ?? ''}${config?.url ?? ''}`;
+
+  if (requestId) {
+    console.error(
+      `[api] ${method} ${url} thất bại (${status ?? 'không có phản hồi'}) — X-Request-Id: ${requestId}`,
+    );
+    return;
+  }
+
+  console.error(`[api] ${method} ${url} thất bại (${status ?? 'không có phản hồi'})`);
 }
