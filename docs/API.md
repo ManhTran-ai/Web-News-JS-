@@ -307,3 +307,130 @@ curl -X POST "http://localhost:4000/api/refresh"
   }
 }
 ```
+
+---
+
+## Endpoint nào dùng ở đâu trong client
+
+Mỗi endpoint chỉ được gọi qua `client/src/api/endpoints.ts` — component không gọi `axios`
+trực tiếp. Dưới đây là mapping từ endpoint → hàm gọi → thunk → slice → nơi dùng.
+
+| Endpoint | Hàm trong `api/endpoints.ts` | Thunk (Redux) | Slice | Nơi dùng |
+|---|---|---|---|---|
+| `GET /api/health` | — | — | — | Chưa dùng ở client (dành cho kiểm tra server) |
+| `GET /api/categories` | `getCategories()` | `fetchCategories` | `categoriesSlice` | `main.tsx` (tải 1 lần khi khởi động) · `pages/CategoryIndexPage.tsx` |
+| `GET /api/sources` | `getSources()` | `fetchSources` | `sourcesSlice` | `main.tsx` (tải 1 lần khi khởi động) · bộ lọc nguồn ở `pages/CategoryPage.tsx` |
+| `GET /api/articles/latest` | `getLatest()` | `fetchLatest` | `articlesSlice` | `layouts/RootLayout.tsx` (dải tin mới nhất, polling 60s) |
+| `GET /api/articles/featured` | `getFeatured()` | `fetchFeatured` | `articlesSlice` | `pages/HomePage.tsx` (carousel tin nổi bật) |
+| `GET /api/articles` | `getArticles()` | `fetchByCategory`, `fetchCategoryLatest`, `queryArticles`, `prefetchNextPage`, `prefetchNextQueryPage` | `articlesSlice` | `pages/CategoryPage.tsx` · `pages/CategoryIndexPage.tsx` · `pages/SearchPage.tsx` · `pages/HomePage.tsx` |
+| `GET /api/articles/:id` | `getArticleById()` | `fetchArticleById` | `articlesSlice` | `pages/ArticleDetailPage.tsx` |
+| `GET /api/articles/:id/related` | `getRelated()` | `fetchRelated` → `fetchRelatedArticles` | `articlesSlice` → `relatedArticlesSlice` | `pages/ArticleDetailPage.tsx` (mục "Bài liên quan") |
+| `GET /api/articles/:id/content` | `getArticleContent()` | `fetchArticleContent` | `articleContentSlice` | `pages/ArticleDetailPage.tsx` → `components/article/ArticleBody.tsx` |
+| `GET /api/articles/rss.xml` | `getRSS()` | `fetchRSS` | `articlesSlice` (`rssFeeds`) | `pages/CategoryPage.tsx` (mục "Nguồn RSS của chuyên mục") |
+| `GET /api/search?q=` | `searchArticles()` | `searchArticles` | `articlesSlice` | Tìm kiếm thuần (không lọc thêm) |
+| `POST /api/refresh` | `callRefresh()` trong `api/refreshQueue.ts` | `refreshArticles` | `articlesSlice` | Gọi gián tiếp qua `api/refreshQueue.ts` khi request GET lỗi |
+| `POST /api/auth/password-reset/request` | `requestPasswordResetCode()` | `sendResetCode` | `authSlice` | `components/common/AuthModal.tsx` |
+| `POST /api/auth/password-reset/verify` | `verifyPasswordResetCode()` | `submitResetPassword` | `authSlice` | `components/common/AuthModal.tsx` |
+
+### Quy tắc bắt buộc khi thêm endpoint mới
+
+1. Thêm hàm gọi vào `client/src/api/endpoints.ts` — không gọi `http` trực tiếp trong component.
+2. Thêm type phản hồi vào `client/src/types/api.ts` (`ApiListResponse<T>`, `ApiItemResponse<T>`).
+3. Thêm thunk trong slice tương ứng và khai báo `condition` để không gọi lại khi cache còn hiệu lực.
+4. Nếu muốn hiển thị lỗi, dùng `toApiError(error).message` — không tự parse `error.response`.
+
+---
+
+## Chạy song song client + server
+
+### Yêu cầu
+
+- Node.js ≥ 22.12.0, npm ≥ 10.
+- Cần Internet để tải RSS và crawl nội dung bài.
+
+### Cài đặt một lần ở thư mục gốc
+
+```bash
+npm install
+```
+
+Không cần `npm install` riêng trong `client/` hay `server/` — repo dùng npm workspaces.
+
+### Chạy cả hai cùng lúc
+
+```bash
+npm run dev
+```
+
+Lệnh này chạy song song hai tiến trình:
+
+| Tiến trình | Cổng | Nhiệm vụ |
+|---|---|---|
+| server | `4000` | Đọc RSS, crawl nội dung, phục vụ `/api/*` |
+| client | `5173` | Giao diện React; Vite proxy `/api` → `http://localhost:4000` |
+
+Mở trình duyệt tại <http://localhost:5173>. Không mở trực tiếp `http://localhost:4000`
+để xem giao diện — cổng đó chỉ phục vụ API (trừ bản production đã build).
+
+### Chạy riêng từng phần
+
+```bash
+npm run dev:server   # chỉ server :4000
+npm run dev:client   # chỉ client :5173
+```
+
+Chạy riêng hữu ích khi một bên đang sửa mà bên kia cần giữ nguyên, ví dụ server đang
+re-crawl nội dung (cất 30 bài mới nhất) mà vẫn muốn sửa giao diện.
+
+### Kiểm tra server đã sẵn sàng
+
+```bash
+curl http://localhost:4000/api/health
+```
+
+Server chạy được khi `status` là `ok` và `articleCount` khác `0` (số bài đã nạp từ
+snapshot `server/data/snapshot.json` hoặc từ lượt refresh đầu tiên).
+
+### Thứ tự khởi động đề xuất cho nhóm
+
+1. `npm run dev:server` trước — đợi log `[refresh]` báo feed thành công.
+2. `npm run dev:client` sau — client cần server sẵn sàng để lần tải đầu tiên có dữ liệu.
+3. Nếu client báo "Không kết nối được tới máy chủ", kiểm tra server còn chạy ở cổng `4000`.
+
+### Cấu hình cổng khác
+
+Đổi cổng server thì phải đổi cả `CORS_ORIGINS` và proxy của Vite:
+
+```bash
+PORT=5000 CORS_ORIGINS=http://localhost:5173 npm run dev:server
+```
+
+```bash
+VITE_API_BASE_URL=http://localhost:5000/api npm run dev:client
+```
+
+### Lệnh kiểm tra trước khi commit
+
+```bash
+npm run typecheck   # kiểu TypeScript cho cả client và server
+npm run lint        # oxlint
+npm test            # vitest
+```
+
+Cả ba lệnh phải qua trước khi tạo PR.
+
+---
+
+## Ghi chú khi báo lỗi
+
+Mọi response có header `X-Request-Id`. Khi báo lỗi, gửi kèm mã này để đối chiếu với
+log server. Server ghi log theo format
+`[request] <requestId> <method> <path> -> <status> (<thời gian>ms)`
+(xem `server/src/middlewares/request-context.ts`).
+
+Client hiển thị mã trong thông báo lỗi: `Không lấy được nội dung (Mã yêu cầu: req-abc-123)`.
+Log phía client ghi kèm `X-Request-Id` tương ứng:
+
+```text
+[api] GET /api/articles/a1/content thất bại (502) — X-Request-Id: req-abc-123
+```
