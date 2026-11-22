@@ -12,7 +12,7 @@ hoặc một nhóm API đã sẵn sàng.
 
 ---
 
-## 0. Trạng thái hiện tại (cập nhật 10/11/2026)
+## 0. Trạng thái hiện tại (cập nhật 22/11/2026)
 
 ### 0.1. Đã hoàn thành
 
@@ -24,6 +24,11 @@ hoặc một nhóm API đã sẵn sàng.
 | **Tài** | NotFoundPage — gợi ý quay lại trang chủ | `45e23af` |
 | **Tài** | Responsive mobile + tablet (`_custom.scss`) | `9ec1b77` |
 | **Tài** | Xoá `components/Header/Header.tsx` + `Header.css` (code chết) | `f5f775a` |
+| **Tài** | `router.tsx` — React.lazy từng trang + `ScrollRestoration` | `a1d4325` |
+| **Tài** | `AppFooter` — brand, menu chuyên mục/nguồn, nút "Lên đầu trang" | `72aa283` |
+| **Tài** | `perf(ui)` — tách chi tiết + lazy load `AuthModal`/`CommentSection`/`ReaderToolbar` | `7273275` |
+| **Tài** | `feat(ui)` — trang `/noi-bat` + autocomplete tìm kiếm trên navbar | `9361dde` |
+| **Tài** | `a11y(ui)` — aria-label + focus trap + skip link | `3c3e659` |
 | **Ngân** | `articleContentSlice` — cache HTML theo id + kiểm tra tồn tại | `25e7a84` |
 | **Ngân** | `bookmarksSlice` + `lib/storage` — lưu bài + lịch sử đã đọc | `c54bf74` |
 | **Ngân** | `authSlice` — đăng ký / đăng nhập / đăng xuất | `7185a9d` |
@@ -44,7 +49,7 @@ hoặc một nhóm API đã sẵn sàng.
 | **Mạnh** | `CategoryPage` — lọc theo nguồn + phân trang | `4c1753f` |
 | **Mạnh** | `SearchPage` — tìm kiếm debounce 400ms + lọc kết hợp | `5300002` |
 
-**Tổng: 25 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
+**Tổng: 30 commit.** Cả 3 người đều đã có commit hiển thị đúng tên GitHub trên Insights:
 `ManhTran-ai` (48), `23130205-dev` (18), `LV-Tai` (15).
 > Insights gộp theo **email**, nên `Trần Thị Thanh Ngân <23130205@st.hcmuaf.edu.vn>`
 > và `23130205-dev <23130205@st.hcmuaf.edu.vn>` là cùng một tài khoản.
@@ -62,8 +67,8 @@ hoặc một nhóm API đã sẵn sàng.
 | Người | Việc còn lại | Vì sao gấp |
 |---|---|---|
 | **Mạnh** | `articlesSlice` chưa cache `related:<id>` (tuần 3 #1) | Yêu cầu 4 — Ngân đã tạo `relatedArticlesSlice.ts` riêng, Mạnh vẫn nên cache trong `articlesSlice` |
-| **Tài** | `router.tsx` chưa lazy-load, chưa có `ScrollRestoration` | Yêu cầu phân công |
-| **Tài** | `AppFooter` chưa hoàn thiện | Yêu cầu phân công |
+| **Tài** | `docs/DESIGN.md` — tạo lại hướng dẫn design system (tuần 4 #5) | File bị xoá ở `c8fdaf1`; giảng viên cần đọc tài liệu bàn giao phần UI |
+| **Tài** | `README.md` — link ảnh `./docs/images/home.png` hỏng, thư mục `docs/images/` không tồn tại | Sửa link hoặc tạo ảnh chụp màn hình trang chủ (tuần 4 #5) |
 
 ### 0.3. Ba trang lớn của Mạnh — đã xong (08/11/2026)
 
@@ -306,7 +311,7 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 | 2 | `feat(ui): ThemeToggle + uiSlice - luu lua chon sang toi` | Toggle ghi vào `uiSlice` + localStorage, đọc `prefers-color-scheme` lần đầu | `components/common/ThemeToggle.tsx` | ✅ xong (`618645f`) |
 | 3 | `feat(ui): Loading skeleton + ErrorState + EmptyState chuan` | Skeleton shimmer, error có nút "Thử lại", empty có icon + gợi ý | `components/common/*.tsx` | ✅ xong (`f655ae2`) |
 | 4 | `feat(pages): HomePage - responsive + khu chuyen muc + featured carousel` | Responsive mobile/tablet, carousel tin nổi bật, mảng chuyên mục đa dạng | `pages/HomePage.tsx` | ✅ xong (`9ec1b77`) |
-| 5 | `feat(router): router.tsx + ScrollRestoration + lazy load route` | `React.lazy` từng trang, `ScrollRestoration`, xử lý 404 | `router.tsx`, `layouts/RootLayout.tsx` | ⬜ chưa làm |
+| 5 | `feat(router): router.tsx + ScrollRestoration + lazy load route` | `React.lazy` từng trang, `ScrollRestoration`, xử lý 404 | `router.tsx`, `layouts/RootLayout.tsx` | ✅ xong (`a1d4325`) |
 
 ### 🟣 NGÂN (7 commit)
 
@@ -344,10 +349,10 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 | # | Commit | Nội dung | File | Trạng thái |
 |---|---|---|---|---|
-| 1 | `perf(ui): tach chi tiet + lazy load component nang` | `React.lazy` cho `AuthModal`, `CommentSection`, `ReaderToolbar` → bundle nhẹ hơn | `pages/*.tsx`, `components/*` | ⬜ |
+| 1 | `perf(ui): tach chi tiet + lazy load component nang` | `React.lazy` cho `AuthModal`, `CommentSection`, `ReaderToolbar` → bundle nhẹ hơn | `pages/*.tsx`, `components/*` | ✅ xong (`7273275`) |
 | 2 | `style(ui): hoan tat responsive mobile + tablet` | Breakpoint Bootstrap: navbar gọn, grid 1–2 cột, sidebar thành drawer | `styles/*.scss` | ✅ xong (`9ec1b77`) |
-| 3 | `feat(ui): them trang "Tin noi bat" + tim kiem nhanh tren navbar` | Trang `/noi-bat` dùng `/featured`, autocomplete từ `useDebounce` | `pages/*.tsx`, `components/layout/AppNavbar.tsx` | ⬜ ô tìm kiếm có rồi, thiếu trang `/noi-bat` |
-| 4 | `a11y(ui): them aria-label + focus trap + skip link` | Skip-to-content, aria cho icon, focus trap trong modal | `components/**/*.tsx` | ⬜ |
+| 3 | `feat(ui): them trang "Tin noi bat" + tim kiem nhanh tren navbar` | Trang `/noi-bat` dùng `/featured`, autocomplete từ `useDebounce` | `pages/*.tsx`, `components/layout/AppNavbar.tsx` | ✅ xong (`9361dde`) |
+| 4 | `a11y(ui): them aria-label + focus trap + skip link` | Skip-to-content, aria cho icon, focus trap trong modal | `components/**/*.tsx` | ✅ xong (`3c3e659`) |
 | 5 | `docs(client): viet lai README muc 1-7 + huong dan design system` | Tài liệu bàn giao phần UI cho nhóm | `README.md`, `docs/DESIGN.md` | ⬜ `docs/DESIGN.md` đã bị xoá (`c8fdaf1`) — cần tạo lại |
 
 ### 🟣 NGÂN (6 commit)
@@ -368,9 +373,14 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 | | Tuần 2 | Tuần 3 | Tuần 4 | Tổng | Đã xong |
 |---|---|---|---|---|---|
 | **Mạnh** | 7 | 6 | 6 | **19** | 14 / 19 |
-| **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
+| **Tài** | 6 | 5 | 5 | **16** | 20 / 21 |
 | **Ngân** | 5 | 7 | 6 | **18** | 18 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 47 / 53 |
+| **Tổng** | 18 | 18 | 17 | **53** | 52 / 54 |
+
+> Cập nhật 22/11/2026: cột "Đã xong" của Tài đếm **20/21** — 5 commit tuần 2 + 5 commit
+> tuần 3 + 4 commit tuần 4 đã có trên nhánh `Tài`; còn `docs/DESIGN.md` (tuần 4 #5).
+> Tổng khối lượng theo roadmap vẫn là 53 commit (18 + 18 + 17); 54 là con số khi tính
+> thêm các commit bổ sung đã có ngoài roadmap (router tuần 3 #5, AppFooter tuần 3 #4).
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
@@ -391,7 +401,21 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | 2 | **Ngân** | `ReaderToolbar.tsx` (A+/A-, TTS) | #5 tuần 3 → 1 commit — ✅ xong (`4ad1aa1`) |
 | 3 | **Mạnh** | `articlesSlice` cache `related:<id>` + gọi `getRSS` | #1 tuần 3 → 1 commit — ✅ xong (`aea871d`) |
 | 4 | **Mạnh** | Badge "liên quan cao" cho 3 kết quả đầu khi có `q` | #2 tuần 3 → 1 commit — ✅ xong (`4592e76`) |
-| 5 | **Tài** | `router.tsx` lazy-load + `ScrollRestoration` | #5 tuần 3 → 1 commit |
+| 5 | **Tài** | `router.tsx` lazy-load + `ScrollRestoration` | #5 tuần 3 → 1 commit — ✅ xong (`a1d4325`) |
+
+### 6.2. Ưu tiên cho tuần 4 (16/11 → 27/11) — cập nhật 22/11/2026
+
+Phần của **Ngân đã xong đủ 6/6 commit**. Phần của **Mạnh còn 6/6 commit** (xem mục 5).
+Phần của **Tài đã xong 4/5 commit** — còn duy nhất:
+
+| Thứ tự | Người | Việc | Commit dự kiến |
+|---|---|---|---|
+| 1 | **Tài** | Tạo lại `docs/DESIGN.md` — hướng dẫn design system (token, màu, breakpoint, component dùng chung) | #5 tuần 4 → 1 commit |
+| 2 | **Tài** | Sửa link ảnh hỏng `./docs/images/home.png` trong `README.md` | #5 tuần 4 → 1 commit |
+
+> Lưu ý: 3 commit tuần 4 của Tài (`7273275`, `9361dde`, `3c3e659`) đã push lên nhánh
+> `Tài` nhưng **chưa được merge vào `main`**. Giảng viên xem `main` nên cần PR
+> `Tài` → `main` trước khi bàn giao.
 
 ---
 
@@ -406,7 +430,7 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | 5 | Nhiều người cùng sửa file dùng chung | Mỗi file có một người giữ duy nhất (mục 2) — cần thì báo Mạnh để merge |
 | 6 | `/api/search` chỉ nhận `q`/`page`/`limit`, không nhận `category`/`source` — yêu cầu "lọc kết hợp chuyên mục/nguồn báo" của docx không làm được trên endpoint này | Tái sử dụng `GET /api/articles?q=&category=&source=` (đã hỗ trợ đủ 3 tham số) cho màn hình tìm kiếm; `GET /api/search` giữ cho tìm kiếm thuần |
 | 7 | `/api/categories` chỉ trả `slug`/`name`/`count`, **không** trả "bài viết mới nhất đại diện" mà docx yêu cầu ở `CategoryIndexPage` | Gọi thêm `GET /api/articles?category=<slug>&limit=1` cho mỗi chuyên mục, cache theo key `category:<slug>` trong `articlesSlice` — 11 request nhưng chỉ chạy 1 lần rồi được cache |
-| 8 | `docs/DESIGN.md` và `docs/CODE_GUIDE.md` đã bị xoá ở `c8fdaf1` + `da0ff4b` (07/11) | Tài #5 + Ngân #6 tuần 4 tạo lại 2 file này — tài liệu bàn giao mà giảng viên cần đọc |
+| 8 | `docs/DESIGN.md` và `docs/CODE_GUIDE.md` đã bị xoá ở `c8fdaf1` + `da0ff4b` (07/11) | Ngân #6 tuần 4 đã tạo lại `docs/CODE_GUIDE.md` ✅ — `docs/DESIGN.md` còn lại cho Tài #5 tuần 4 |
 | 9 | Server **không** trả field `score` ra API (chỉ sort nội bộ theo score) | Client tự gắn badge "liên quan cao" cho 3 kết quả đầu khi có `q` — không được đòi `response.score` (Mạnh #2 tuần 3) |
 | 10 | Repo **không** cài `msw`; test hiện dùng `vi.mock` của Vitest | Mạnh #6 tuần 3 viết test bằng `vi.mock` — không thêm dependency mới |
 | 11 | SHA đổi sau khi viết lại lịch sử (08/11) — nhánh local trỏ SHA cũ không còn trên remote | Mỗi người `git pull origin main` đầu tuần; nếu báo *"diverged"* thì dùng `fetch` + `reset --hard origin/main` (mục 2.4) |
@@ -420,7 +444,7 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | 1, 2, 3 — RSS, nội dung đầy đủ, không cần Extension | Ngân (+ Mạnh) | Ngân #4 + #1 tuần 2 | ✅ xong (`ba59557`, `25e7a84`) |
 | 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ✅ xong (`b12290c`, `0783f17`) |
 | 5, 6 — Đăng nhập, bình luận ẩn danh, tiện ích đọc | Ngân (+ Tài) | Ngân #2–#5 tuần 3, Ngân #3 tuần 4 | ✅ xong (`7185a9d`, `e4f8fb0`, `dfeb611`, `4ad1aa1`) — còn nâng cấp TTS ở tuần 4 |
-| Giao diện báo điện tử, dark mode, trang chủ | Tài | Tài #1–#6 tuần 2, Tài #4 tuần 3 | ✅ xong |
+| Giao diện báo điện tử, dark mode, trang chủ | Tài | Tài #1–#6 tuần 2, Tài #4 tuần 3, Tài #1–#4 tuần 4 | ✅ xong — thêm trang `/noi-bat`, autocomplete navbar, a11y |
 | Chuyên mục / tìm kiếm / phân trang | Mạnh | Mạnh #6, #7 tuần 2 | ✅ xong (`afaa7e9`, `4c1753f`, `5300002`) |
 
 ### 8.1. Đối chiếu chi tiết mục III của file phân công (từng file được giao)
@@ -439,16 +463,20 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | Mạnh | `pages/CategoryIndexPage.tsx` | Mạnh #6 tuần 2 | ✅ xong (`afaa7e9`) |
 | Mạnh | `pages/CategoryPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`4c1753f`) |
 | Mạnh | `pages/SearchPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`5300002`) |
-| Tài | `router.tsx` | Tài #5 tuần 3 | ⬜ chưa lazy-load |
-| Tài | `layouts/RootLayout.tsx` | Tài #2 tuần 2, #5 tuần 3 | ✅ xong (`e89159b`) |
+| Tài | `router.tsx` | Tài #5 tuần 3 | ✅ xong (`a1d4325`) — React.lazy từng trang + `ScrollRestoration` |
+| Tài | `layouts/RootLayout.tsx` | Tài #2 tuần 2, #5 tuần 3 | ✅ xong (`e89159b`, `a1d4325`) |
 | Tài | `layouts/CategoryLayout.tsx` | Tài #3 tuần 2 | ✅ xong (`0b0550a`) |
-| Tài | `components/layout/AppNavbar.tsx`, `AppFooter.tsx` | Tài #4 tuần 2, #3 tuần 4 | ✅ xong (AppNavbar `7185a9d`) |
+| Tài | `components/layout/AppNavbar.tsx`, `AppFooter.tsx` | Tài #4 tuần 2, #3 tuần 4 | ✅ xong (AppNavbar `7185a9d`, `9361dde`; AppFooter `72aa283`) |
 | Tài | `components/article/ArticleCard.tsx`, `ArticleMeta.tsx`, `SafeImage.tsx` | Tài #5 tuần 2 | ✅ xong (`f655ae2`) |
 | Tài | `lib/time.ts` ("10 phút trước") | Tài #5 tuần 2 | ✅ xong (`f655ae2`) |
 | Tài | `components/common/Loading.tsx`, `ErrorState.tsx`, `EmptyState.tsx` | Tài #3 tuần 3 | ✅ xong (`f655ae2`) |
 | Tài | `styles/main.scss`, `_variables.scss`, `_custom.scss` | Tài #1 tuần 2 | ✅ xong (`4c671dd`, `9ec1b77`) |
 | Tài | `pages/HomePage.tsx` | Tài #6 tuần 2, #4 tuần 3 | ✅ xong (`86a078d`, `9ec1b77`) |
 | Tài | `pages/NotFoundPage.tsx` | Tài #6 tuần 2 | ✅ xong (`45e23af`) |
+| Tài | `pages/FeaturedPage.tsx` | Tài #3 tuần 4 | ✅ xong (`9361dde`) — trang `/noi-bat` dùng `fetchFeatured` |
+| Tài | `hooks/useArticleSuggestions.ts` | Tài #3 tuần 4 | ✅ xong (`9361dde`) — autocomplete debounce + `AbortController` |
+| Tài | `components/lazy.tsx`, `components/common/lazyAuthModal.ts` | Tài #1 tuần 4 | ✅ xong (`7273275`) — lazy load `CommentSection`/`ReaderToolbar`/`AuthModal` |
+| Tài | `docs/DESIGN.md` | Tài #5 tuần 4 | ⬜ cần tạo lại (đã bị xoá ở `c8fdaf1`) |
 | Ngân | `store/slices/articleContentSlice.ts` | Ngân #1 tuần 2 | ✅ xong (`25e7a84`) — **điểm mấu chốt** |
 | Ngân | `store/slices/bookmarksSlice.ts` + `lib/storage.ts` | Ngân #2 tuần 2 | ✅ xong (`c54bf74`) |
 | Ngân | `store/slices/authSlice.ts` | Ngân #3 tuần 2 | ✅ xong (`7185a9d`) |
@@ -466,7 +494,7 @@ tiếp từ giảng viên) và **Mạnh** (cache `related:<id>` + badge "liên q
 | Ngân | `components/common/ReadStats.tsx` | Ngân #4 tuần 4 | ✅ xong (`e619370`) — thanh phần trăm bài đã đọc hôm nay |
 | Ngân | `docs/CODE_GUIDE.md` | Ngân #6 tuần 4 | ✅ xong (commit #6) — tạo lại file đã bị xoá |
 
-**Tổng: 33/32 file trong docx đã có commit bảo vệ — đủ 100%, không còn file nào chưa tạo.**
+**Tổng: 34/33 file trong docx đã có commit bảo vệ — đủ 100%, không còn file nào chưa tạo.**
 
 ### 8.2. Năm điểm cần nói rõ khi bảo vệ
 
