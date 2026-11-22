@@ -115,6 +115,21 @@ npm run build        # build server rồi client
 npm start            # server :4000 phục vụ cả API và client đã build
 ```
 
+### Chạy song song client + server cho nhóm
+
+`npm run dev` chạy hai tiến trình: server ở cổng `4000` (đọc RSS, crawl nội dung, phục vụ
+`/api/*`) và client ở cổng `5173` (Vite proxy `/api` → `http://localhost:4000`).
+
+Nên khởi động server trước, đợi log `[refresh]` báo feed thành công rồi mở client — lần tải
+đầu tiên sẽ có dữ liệu ngay. Kiểm tra server sẵn sàng:
+
+```bash
+curl http://localhost:4000/api/health
+```
+
+Chi tiết cấu hình cổng, `CORS_ORIGINS`, thứ tự khởi động và cách đối chiếu lỗi bằng
+`X-Request-Id` xem [`docs/API.md`](./docs/API.md).
+
 ## 5. Bảng lệnh
 
 | Lệnh | Tác dụng |
@@ -151,6 +166,39 @@ Tất cả endpoint GET, tiền tố `/api`. Xem chi tiết tại [`docs/API.md`
 | `POST /api/refresh` | Buộc quét lại toàn bộ RSS |
 
 Mã lỗi: `VALIDATION_ERROR` 400 · `NOT_FOUND` 404 · `REFRESH_IN_PROGRESS` 429 · `CONTENT_UNAVAILABLE` 502 · `INTERNAL_ERROR` 500.
+
+Mỗi response có header `X-Request-Id` để đối chiếu log server. Client hiển thị mã này trong
+thông báo lỗi và ghi kèm vào console.
+
+### Endpoint nào dùng ở đâu trong client
+
+Mỗi endpoint chỉ được gọi qua `client/src/api/endpoints.ts`, sau đó qua thunk trong Redux
+slice. Bảng mapping đầy đủ (endpoint → hàm → thunk → slice → component dùng) nằm ở
+[`docs/API.md`](./docs/API.md#endpoint-nào-dùng-ở-đâu-trong-client).
+
+Tóm tắt:
+
+| Endpoint | Hàm gọi | Thunk | Nơi dùng |
+|---|---|---|---|
+| `/api/categories` | `getCategories()` | `fetchCategories` | `main.tsx`, `CategoryIndexPage.tsx` |
+| `/api/sources` | `getSources()` | `fetchSources` | `main.tsx`, bộ lọc ở `CategoryPage.tsx` |
+| `/api/articles/latest` | `getLatest()` | `fetchLatest` | `RootLayout.tsx` (dải tin, polling 60s) |
+| `/api/articles/featured` | `getFeatured()` | `fetchFeatured` | `HomePage.tsx` |
+| `/api/articles` | `getArticles()` | `fetchByCategory`, `queryArticles`, `prefetchNextPage` | `CategoryPage.tsx`, `SearchPage.tsx`, `HomePage.tsx` |
+| `/api/articles/:id` | `getArticleById()` | `fetchArticleById` | `ArticleDetailPage.tsx` |
+| `/api/articles/:id/related` | `getRelated()` | `fetchRelatedArticles` | `ArticleDetailPage.tsx` |
+| `/api/articles/:id/content` | `getArticleContent()` | `fetchArticleContent` | `ArticleDetailPage.tsx` → `ArticleBody.tsx` |
+| `/api/articles/rss.xml` | `getRSS()` | `fetchRSS` | `CategoryPage.tsx` |
+| `/api/refresh` | — (`api/refreshQueue.ts`) | `refreshArticles` | Gọi tự động khi request GET lỗi |
+
+### Tài liệu cho nhóm
+
+| Tài liệu | Nội dung |
+|---|---|
+| [`docs/API.md`](./docs/API.md) | Contract API, mapping endpoint ↔ file client, cách chạy song song |
+| [`docs/CODE_GUIDE.md`](./docs/CODE_GUIDE.md) | Hướng dẫn từng tính năng người dùng và checklist đối chiếu yêu cầu |
+| [`docs/ROADMAP-FE.md`](./docs/ROADMAP-FE.md) | Phân công và tiến độ theo tuần |
+| [`.cursor/skills/CODE_GUIDE.md`](./.cursor/skills/CODE_GUIDE.md) | Kiến trúc chi tiết của client và server |
 
 ## 7. Thêm một nguồn RSS mới
 

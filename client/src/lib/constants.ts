@@ -14,7 +14,7 @@ export const STORAGE_KEYS = {
 export const PAGE_SIZE = 20;
 
 /** Thời gian cache danh sách bài (ms) — trong 60s không gọi lại API cùng một tham số. */
-export const LIST_CACHE_TTL_MS = 60_000;
+export const LIST_CACHE_TTL_MS = 5 * 60_000;
 
 /** Cache cho danh sách "mới nhất" — ngắn hơn vì được polling 60s/lần. */
 export const LATEST_CACHE_TTL_MS = 30_000;
@@ -40,6 +40,10 @@ export const HIGH_RELEVANCE_COUNT = 3;
 
 /** Thời gian cache danh sách bài liên quan (ms). */
 export const RELATED_CACHE_TTL_MS = 60_000;
+
+export const PREFETCH_PAGE_AHEAD = 1;
+
+export const MAX_PREFETCH_ENTRIES = 5;
 
 /** Cỡ chữ trong phần nội dung bài viết — bước nhảy mỗi lần bấm A+/A-. */
 export const READER_FONT_SCALE_STEP = 0.1;

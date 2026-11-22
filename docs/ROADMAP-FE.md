@@ -334,16 +334,18 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 ## 5. TUẦN 4 — 16/11 → 27/11 — "Hoàn thiện, tối ưu & bàn giao"
 
+> **Trạng thái tuần 4 (21/11/2026): Mạnh đã xong đủ 6/6 commit.** Commit nằm trên nhánh `ManhTran`.
+
 ### 🔵 MẠNH (6 commit)
 
 | # | Commit | Nội dung | File | Trạng thái |
 |---|---|---|---|---|
-| 1 | `perf(client): articlesSlice - giu cache 5 phut + prefetch trang ke tiep` | TTL cache 5 phút, prefetch `page+1` khi cuộn gần đối → khớp prefetch phía server | `store/slices/articlesSlice.ts` | ⬜ |
-| 2 | `feat(client): http - hang doi goi refresh de tranh doi mau` | Khi request hết hạn, gọi `POST /api/refresh` một lần thay vì retry dồn; xử lý 429 | `api/http.ts`, `api/endpoints.ts` | ⬜ |
-| 3 | `feat(client): xu ly 304 tu cache khi offline` | Mất mạng mà server trả 304 → trả cache cũ | `api/http.ts` | ⬜ |
-| 4 | `refactor(client): tach api client + tao types tuong tac API` | Chuẩn hoá `ApiError`, type response của `/related`, `/rss.xml`, `/refresh` | `types/article.ts`, `api/*` | ⬜ |
-| 5 | `feat(client): api/http - hien thi X-Request-Id khi loi de debug` | Đọc header `X-Request-Id` trong response lỗi, log kèm để đối chiếu log server | `api/http.ts` | ⬜ |
-| 6 | `docs(client): comment API contract + huong dan chay cho nhom` | Ghi rõ endpoint nào dùng ở đâu, cách chạy song song client + server | `docs/API.md`, `README.md` | ⬜ |
+| 1 | `perf(client): articlesSlice - giu cache 5 phut + prefetch trang ke tiep` | TTL cache 5 phút, prefetch `page+1` khi cuộn gần đối → khớp prefetch phía server | `store/slices/articlesSlice.ts` | ✅ xong (`27070b1`) |
+| 2 | `feat(client): http - hang doi goi refresh de tranh doi mau` | Khi request hết hạn, gọi `POST /api/refresh` một lần thay vì retry dồn; xử lý 429 | `api/http.ts`, `api/endpoints.ts` | ✅ xong (`92217dc`) |
+| 3 | `feat(client): xu ly 304 tu cache khi offline` | Mất mạng mà server trả 304 → trả cache cũ | `api/http.ts` | ✅ xong (`d483f36`) |
+| 4 | `refactor(client): tach api client + tao types tuong tac API` | Chuẩn hoá `ApiError`, type response của `/related`, `/rss.xml`, `/refresh` | `types/article.ts`, `api/*` | ✅ xong (`98c71b7`) |
+| 5 | `feat(client): api/http - hien thi X-Request-Id khi loi de debug` | Đọc header `X-Request-Id` trong response lỗi, log kèm để đối chiếu log server | `api/http.ts` | ✅ xong (`67b0416`) |
+| 6 | `docs(client): comment API contract + huong dan chay cho nhom` | Ghi rõ endpoint nào dùng ở đâu, cách chạy song song client + server | `docs/API.md`, `README.md` | ✅ xong (`f3df86d`) |
 
 ### 🟢 TÀI (5 commit)
 
@@ -372,15 +374,10 @@ File nào có nhiều người đụng thì giao một người giữ, người 
 
 | | Tuần 2 | Tuần 3 | Tuần 4 | Tổng | Đã xong |
 |---|---|---|---|---|---|
-| **Mạnh** | 7 | 6 | 6 | **19** | 14 / 19 |
-| **Tài** | 6 | 5 | 5 | **16** | 20 / 21 |
+| **Mạnh** | 7 | 6 | 6 | **19** | 19 / 19 |
+| **Tài** | 6 | 5 | 5 | **16** | 15 / 16 |
 | **Ngân** | 5 | 7 | 6 | **18** | 18 / 18 |
-| **Tổng** | 18 | 18 | 17 | **53** | 52 / 54 |
-
-> Cập nhật 22/11/2026: cột "Đã xong" của Tài đếm **20/21** — 5 commit tuần 2 + 5 commit
-> tuần 3 + 4 commit tuần 4 đã có trên nhánh `Tài`; còn `docs/DESIGN.md` (tuần 4 #5).
-> Tổng khối lượng theo roadmap vẫn là 53 commit (18 + 18 + 17); 54 là con số khi tính
-> thêm các commit bổ sung đã có ngoài roadmap (router tuần 3 #5, AppFooter tuần 3 #4).
+| **Tổng** | 18 | 18 | 17 | **53** | 52 / 53 |
 
 ### 6.1. Ưu tiên cho tuần tới (09/11 → 15/11)
 
@@ -424,9 +421,9 @@ Phần của **Tài đã xong 4/5 commit** — còn duy nhất:
 | # | Rủi ro | Xử lý |
 |---|---|---|
 | 1 | Doc ghi `commentsSlice.ts` riêng nhưng commit tuần 3 đã gộp comment vào `interactionSlice.ts` | Dùng `interactionSlice.ts` sẵn có, **không** tách thêm file — tránh hai nơi quản lý cùng một state |
-| 2 | `/api/refresh` giới hạn, 3 người gọi đồng thời sẽ nhận 429 | Gom qua một lớp hàng đợi có TTL (Mạnh #2 tuần 4), không gọi trực tiếp trong component |
+| 2 | `/api/refresh` giới hạn, 3 người gọi đồng thời sẽ nhận 429 | Gom qua một lớp hàng đợi có TTL — ✅ xong `api/refreshQueue.ts` (Mạnh #2 tuần 4, `92217dc`): mọi caller cùng lúc dùng chung 1 promise, cooldown 30s, 429 thử lại với backoff 1s/3s/10s |
 | 3 | `/content` giới hạn 30 req/phút | Bắt buộc cache `contentsById` — Ngân #1 tuần 2 là điểm mấu chốt (✅ đã xong) |
-| 4 | `X-Request-Id` chỉ có từ 16/11 nhưng Mạnh dùng ở tuần 3 | Đã chuyển Mạnh #5 tuần 3 (commit `api/http.ts` đọc `X-Request-Id`) xuống **tuần 4 #5** — tuần 3 #5/#6 giờ là 2 commit test |
+| 4 | `X-Request-Id` chỉ có từ 16/11 nhưng Mạnh dùng ở tuần 3 | Đã chuyển Mạnh #5 tuần 3 (commit `api/http.ts` đọc `X-Request-Id`) xuống **tuần 4 #5** — ✅ xong (`67b0416`): đọc header, log kèm và hiển thị trong thông báo lỗi |
 | 5 | Nhiều người cùng sửa file dùng chung | Mỗi file có một người giữ duy nhất (mục 2) — cần thì báo Mạnh để merge |
 | 6 | `/api/search` chỉ nhận `q`/`page`/`limit`, không nhận `category`/`source` — yêu cầu "lọc kết hợp chuyên mục/nguồn báo" của docx không làm được trên endpoint này | Tái sử dụng `GET /api/articles?q=&category=&source=` (đã hỗ trợ đủ 3 tham số) cho màn hình tìm kiếm; `GET /api/search` giữ cho tìm kiếm thuần |
 | 7 | `/api/categories` chỉ trả `slug`/`name`/`count`, **không** trả "bài viết mới nhất đại diện" mà docx yêu cầu ở `CategoryIndexPage` | Gọi thêm `GET /api/articles?category=<slug>&limit=1` cho mỗi chuyên mục, cache theo key `category:<slug>` trong `articlesSlice` — 11 request nhưng chỉ chạy 1 lần rồi được cache |
@@ -442,7 +439,7 @@ Phần của **Tài đã xong 4/5 commit** — còn duy nhất:
 | Yêu cầu | Người phụ trách | Commit bảo vệ | Trạng thái |
 |---|---|---|---|
 | 1, 2, 3 — RSS, nội dung đầy đủ, không cần Extension | Ngân (+ Mạnh) | Ngân #4 + #1 tuần 2 | ✅ xong (`ba59557`, `25e7a84`) |
-| 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ✅ xong (`b12290c`, `0783f17`) |
+| 4 — Redux tối ưu bộ nhớ, không gọi lại API | Mạnh | Mạnh #3 tuần 2, Mạnh #1 tuần 4 | ✅ xong (`b12290c`, `27070b1`) — TTL cache 5 phút, prefetch trang kế tiếp, cache offline khi mất mạng |
 | 5, 6 — Đăng nhập, bình luận ẩn danh, tiện ích đọc | Ngân (+ Tài) | Ngân #2–#5 tuần 3, Ngân #3 tuần 4 | ✅ xong (`7185a9d`, `e4f8fb0`, `dfeb611`, `4ad1aa1`) — còn nâng cấp TTS ở tuần 4 |
 | Giao diện báo điện tử, dark mode, trang chủ | Tài | Tài #1–#6 tuần 2, Tài #4 tuần 3, Tài #1–#4 tuần 4 | ✅ xong — thêm trang `/noi-bat`, autocomplete navbar, a11y |
 | Chuyên mục / tìm kiếm / phân trang | Mạnh | Mạnh #6, #7 tuần 2 | ✅ xong (`afaa7e9`, `4c1753f`, `5300002`) |
@@ -451,15 +448,15 @@ Phần của **Tài đã xong 4/5 commit** — còn duy nhất:
 
 | Người | File docx giao | Commit trong roadmap | Trạng thái |
 |---|---|---|---|
-| Mạnh | `types/article.ts` | Mạnh #4 tuần 4 | Đã có nền từ `f655ae2` (tuần 1), tuần 4 chuẩn hoá lại |
-| Mạnh | `api/http.ts` | Mạnh #1 tuần 2, #2–#3 + #5 tuần 4 | ✅ xong (`0783f17`) |
-| Mạnh | `api/endpoints.ts` | Mạnh #2 tuần 2, #1 tuần 3, #2/#4 tuần 4 | ✅ xong (`b6d0d29`) |
+| Mạnh | `types/article.ts` | Mạnh #4 tuần 4 | ✅ xong (`98c71b7`) — tách `types/api.ts`, `types/article.ts` chỉ còn kiểu dữ liệu bài viết |
+| Mạnh | `api/http.ts` | Mạnh #1 tuần 2, #2–#3 + #5 tuần 4 | ✅ xong (`92217dc`, `d483f36`, `67b0416`) — tách lõi sang `api/client.ts` |
+| Mạnh | `api/endpoints.ts` | Mạnh #2 tuần 2, #1 tuần 3, #2/#4 tuần 4 | ✅ xong (`b6d0d29`, `98c71b7`) |
 | Mạnh | `store/index.ts`, `store/hooks.ts` | Mạnh #4 tuần 2 | ✅ xong (`f655ae2`) |
 | Mạnh | `store/slices/categoriesSlice.ts` | Mạnh #4 tuần 2 | ✅ xong (`f655ae2`) |
-| Mạnh | `store/slices/articlesSlice.ts` | Mạnh #3 tuần 2, #1/#2/#4 tuần 3, #1 tuần 4 | ✅ xong (`b12290c`) — còn `related:<id>` ở tuần 3 #1 |
+| Mạnh | `store/slices/articlesSlice.ts` | Mạnh #3 tuần 2, #1/#2/#4 tuần 3, #1 tuần 4 | ✅ xong (`27070b1`) — TTL 5 phút + prefetch trang kế tiếp |
 | Mạnh | `hooks/useListArticles.ts` | Mạnh #5 tuần 2 | ✅ xong (`2238640`) |
 | Mạnh | `hooks/useDebounce.ts` (400ms) | Mạnh #5 tuần 2 | ✅ xong (`f655ae2`) |
-| Mạnh | `hooks/usePolling.ts` | Mạnh #5 tuần 2, #3 tuần 3 | ⬜ cần backoff + `visibilitychange` |
+| Mạnh | `hooks/usePolling.ts` | Mạnh #5 tuần 2, #3 tuần 3 | ✅ xong (`009bc02`) — backoff + `visibilitychange` |
 | Mạnh | `pages/CategoryIndexPage.tsx` | Mạnh #6 tuần 2 | ✅ xong (`afaa7e9`) |
 | Mạnh | `pages/CategoryPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`4c1753f`) |
 | Mạnh | `pages/SearchPage.tsx` | Mạnh #7 tuần 2 | ✅ xong (`5300002`) |

@@ -1,33 +1,31 @@
 import { http } from './http';
 import type {
-  ApiItem,
-  ApiList,
-  Article,
-  ArticleContent,
-  Category,
-  Source,
-} from '@/types/article';
+  ApiItemResponse,
+  ApiListResponse,
+  RelatedResponse,
+} from '@/types/api';
+import type { Article, ArticleContent, Category, Source } from '@/types/article';
 
 export async function getCategories(): Promise<Category[]> {
-  const response = await http.get<{ data: Category[] }>('/categories');
+  const response = await http.get<ApiItemResponse<Category[]>>('/categories');
   return response.data.data;
 }
 
 export async function getSources(): Promise<Source[]> {
-  const response = await http.get<{ data: Source[] }>('/sources');
+  const response = await http.get<ApiItemResponse<Source[]>>('/sources');
   return response.data.data;
 }
 
 export async function getLatest(
   limit = 20,
   page = 1,
-): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/articles/latest', { params: { limit, page } });
+): Promise<ApiListResponse<Article>> {
+  const response = await http.get<ApiListResponse<Article>>('/articles/latest', { params: { limit, page } });
   return response.data;
 }
 
-export async function getFeatured(limit = 10): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/articles/featured', { params: { limit } });
+export async function getFeatured(limit = 10): Promise<ApiListResponse<Article>> {
+  const response = await http.get<ApiListResponse<Article>>('/articles/featured', { params: { limit } });
   return response.data;
 }
 
@@ -35,8 +33,8 @@ export async function getByCategory(
   category: string,
   limit = 20,
   page = 1,
-): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/articles', {
+): Promise<ApiListResponse<Article>> {
+  const response = await http.get<ApiListResponse<Article>>('/articles', {
     params: { category, limit, page },
   });
   return response.data;
@@ -61,8 +59,8 @@ export interface ArticleListParams {
 export async function getArticles(
   params: ArticleListParams = {},
   signal?: AbortSignal,
-): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/articles', { params, signal });
+): Promise<ApiListResponse<Article>> {
+  const response = await http.get<ApiListResponse<Article>>('/articles', { params, signal });
   return response.data;
 }
 
@@ -71,8 +69,8 @@ export async function searchArticles(
   limit = 20,
   page = 1,
   signal?: AbortSignal,
-): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>('/search', {
+): Promise<ApiListResponse<Article>> {
+  const response = await http.get<ApiListResponse<Article>>('/search', {
     params: { q, limit, page },
     signal,
   });
@@ -80,19 +78,19 @@ export async function searchArticles(
 }
 
 export async function getArticleById(id: string): Promise<Article> {
-  const response = await http.get<ApiItem<Article>>(`/articles/${id}`);
+  const response = await http.get<ApiItemResponse<Article>>(`/articles/${id}`);
   return response.data.data;
 }
 
-export async function getRelated(id: string, limit = 6): Promise<ApiList<Article>> {
-  const response = await http.get<ApiList<Article>>(`/articles/${id}/related`, {
+export async function getRelated(id: string, limit = 6): Promise<RelatedResponse> {
+  const response = await http.get<RelatedResponse>(`/articles/${id}/related`, {
     params: { limit },
   });
   return response.data;
 }
 
 export async function getArticleContent(id: string): Promise<ArticleContent> {
-  const response = await http.get<ApiItem<ArticleContent>>(`/articles/${id}/content`);
+  const response = await http.get<ApiItemResponse<ArticleContent>>(`/articles/${id}/content`);
   return response.data.data;
 }
 
