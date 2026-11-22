@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
@@ -13,7 +13,7 @@ import {
   setCommentLiked,
 } from '@/store/slices/interactionSlice';
 import { selectCurrentUser, selectIsAuthenticated } from '@/store/slices/authSlice';
-import { AuthModal } from '@/components/common/AuthModal';
+import { LazyAuthModal } from '@/components/common/lazyAuthModal';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Toast } from '@/components/common/Toast';
 import { timeAgo } from '@/lib/time';
@@ -117,7 +117,9 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           />
         )}
 
-        <AuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
+        <Suspense fallback={null}>
+          <LazyAuthModal show={showAuthModal} onClose={() => setShowAuthModal(false)} />
+        </Suspense>
       </section>
     );
   }
@@ -215,6 +217,7 @@ function CommentItem({ comment, currentUserId, onLike, onRemove }: CommentItemPr
           type="button"
           className={`btn btn-sm btn-link comment-item__like${liked ? ' is-liked' : ''}`}
           aria-pressed={liked}
+          aria-label={liked ? 'Bỏ thích bình luận' : 'Thích bình luận'}
           onClick={onLike}
         >
           <i
@@ -225,7 +228,12 @@ function CommentItem({ comment, currentUserId, onLike, onRemove }: CommentItemPr
         </button>
 
         {isOwner && onRemove && (
-          <button type="button" className="btn btn-sm btn-link text-danger" onClick={onRemove}>
+          <button
+            type="button"
+            className="btn btn-sm btn-link text-danger"
+            aria-label={`Xoá bình luận của bạn`}
+            onClick={onRemove}
+          >
             Xoá
           </button>
         )}

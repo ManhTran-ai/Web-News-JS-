@@ -33,6 +33,10 @@ export function RootLayout() {
 
   return (
     <div className="d-flex flex-column min-vh-100">
+      <a className="skip-link" href="#main-content">
+        Bỏ qua tới nội dung chính
+      </a>
+
       <AppNavbar />
 
       {tickerArticles.length > 0 && (
@@ -41,7 +45,7 @@ export function RootLayout() {
         </div>
       )}
 
-      <main className="flex-grow-1">
+      <main className="flex-grow-1" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
 

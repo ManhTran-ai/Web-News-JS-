@@ -21,6 +21,9 @@ const ArticleDetailPage = lazy(() =>
 );
 const SearchPage = lazy(() => import('@/pages/SearchPage').then((m) => ({ default: m.SearchPage })));
 const SavedPage = lazy(() => import('@/pages/SavedPage').then((m) => ({ default: m.SavedPage })));
+const FeaturedPage = lazy(() =>
+  import('@/pages/FeaturedPage').then((m) => ({ default: m.FeaturedPage })),
+);
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -80,6 +83,7 @@ export const router = createBrowserRouter([
         errorElement: <RouteErrorPage />,
       },
       { path: 'tim-kiem', element: withSuspense(<SearchPage />) },
+      { path: 'noi-bat', element: withSuspense(<FeaturedPage />) },
       { path: 'da-luu', element: withSuspense(<SavedPage />) },
       { path: '*', element: withSuspense(<NotFoundPage />) },
     ],

@@ -70,7 +70,9 @@ export function PasswordResetForm({ onDone }: PasswordResetFormProps) {
   if (success) {
     return (
       <div className="auth-modal__reset-done">
-        <p className="auth-modal__reset-success">{success}</p>
+        <p className="auth-modal__reset-success" role="status">
+          {success}
+        </p>
         <Button variant="dark" className="w-100" onClick={onDone}>
           Về trang đăng nhập
         </Button>
@@ -92,7 +94,11 @@ export function PasswordResetForm({ onDone }: PasswordResetFormProps) {
           <Form.Control.Feedback type="invalid">{fieldErrors.email}</Form.Control.Feedback>
         </Form.Group>
 
-        {authError && <p className="auth-modal__error">{authError}</p>}
+        {authError && (
+          <p className="auth-modal__error" role="alert">
+            {authError}
+          </p>
+        )}
 
         <Button type="submit" variant="dark" className="w-100" disabled={isSending}>
           {isSending ? 'Đang gửi mã...' : 'Gửi mã bảo mật qua email'}
@@ -137,7 +143,11 @@ export function PasswordResetForm({ onDone }: PasswordResetFormProps) {
         <Form.Control.Feedback type="invalid">{fieldErrors.password}</Form.Control.Feedback>
       </Form.Group>
 
-      {authError && <p className="auth-modal__error">{authError}</p>}
+      {authError && (
+        <p className="auth-modal__error" role="alert">
+          {authError}
+        </p>
+      )}
 
       <Button type="submit" variant="dark" className="w-100">
         Đặt lại mật khẩu

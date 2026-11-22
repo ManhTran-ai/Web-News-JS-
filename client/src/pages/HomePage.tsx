@@ -111,6 +111,8 @@ export function HomePage() {
     <Container className="py-4">
       <title>Tin tức 24h — Trang chủ</title>
 
+      <h1 className="visually-hidden">Tin tức 24h — Trang chủ</h1>
+
       <Row className="g-4">
         <Col lg={8}>
           <section className="n24-section">

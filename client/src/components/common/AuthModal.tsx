@@ -68,12 +68,14 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
   const [registerForm, setRegisterForm] = useState({ fullName: '', email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showReset, setShowReset] = useState(false);
+  const loginTabRef = useRef<HTMLButtonElement>(null);
+  const registerTabRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (show) {
       firstInputRef.current?.focus();
     }
-  }, [show, mode]);
+  }, [show]);
 
   // Đăng nhập/đăng ký thành công thì đóng modal.
   useEffect(() => {
@@ -101,6 +103,15 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
     dispatch(clearPasswordReset());
   };
 
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+    event.preventDefault();
+    const next: AuthMode = event.key === 'ArrowRight' ? 'register' : 'login';
+    switchMode(next);
+    (next === 'login' ? loginTabRef : registerTabRef).current?.focus();
+  };
+
   const handleLogin = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
@@ -122,9 +133,19 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
   };
 
   return (
-    <Modal show={show} onHide={onClose} centered contentClassName="auth-modal">
+    <Modal
+      show={show}
+      onHide={onClose}
+      centered
+      contentClassName="auth-modal"
+      aria-labelledby="auth-modal-title"
+      autoFocus
+      enforceFocus
+      restoreFocus
+      restoreFocusOptions={{ preventScroll: true }}
+    >
       <Modal.Header closeButton>
-        <Modal.Title className="fs-5">
+        <Modal.Title id="auth-modal-title" className="fs-5">
           {showReset ? 'Quên mật khẩu' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
         </Modal.Title>
       </Modal.Header>
@@ -134,29 +155,45 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
           <PasswordResetForm onDone={closeReset} />
         ) : (
           <>
-        <div className="auth-modal__tabs" role="tablist">
+        <div className="auth-modal__tabs" role="tablist" aria-label="Đăng nhập hoặc đăng ký">
           <button
             type="button"
             role="tab"
+            id="auth-tab-login"
+            ref={loginTabRef}
+            aria-controls="auth-panel-login"
             aria-selected={mode === 'login'}
+            tabIndex={mode === 'login' ? 0 : -1}
             className={`btn btn-sm ${mode === 'login' ? 'btn-dark' : 'btn-outline-dark'}`}
             onClick={() => switchMode('login')}
+            onKeyDown={handleTabKeyDown}
           >
             Đăng nhập
           </button>
           <button
             type="button"
             role="tab"
+            id="auth-tab-register"
+            ref={registerTabRef}
+            aria-controls="auth-panel-register"
             aria-selected={mode === 'register'}
+            tabIndex={mode === 'register' ? 0 : -1}
             className={`btn btn-sm ${mode === 'register' ? 'btn-dark' : 'btn-outline-dark'}`}
             onClick={() => switchMode('register')}
+            onKeyDown={handleTabKeyDown}
           >
             Đăng ký
           </button>
         </div>
 
         {mode === 'login' ? (
-          <Form onSubmit={handleLogin} noValidate>
+          <div
+            role="tabpanel"
+            id="auth-panel-login"
+            aria-labelledby="auth-tab-login"
+            tabIndex={0}
+          >
+            <Form onSubmit={handleLogin} noValidate>
             <Form.Group className="mb-3" controlId="auth-login-email">
               <Form.Label>Email</Form.Label>
               <Form.Control
@@ -180,7 +217,11 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
               }
             />
 
-            {authError && <p className="auth-modal__error">{authError}</p>}
+            {authError && (
+              <p className="auth-modal__error" role="alert">
+                {authError}
+              </p>
+            )}
 
             <Button type="submit" variant="dark" className="w-100">
               Đăng nhập
@@ -189,9 +230,16 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
             <button type="button" className="auth-modal__link" onClick={openReset}>
               Quên mật khẩu?
             </button>
-          </Form>
+            </Form>
+          </div>
         ) : (
-          <Form onSubmit={handleRegister} noValidate>
+          <div
+            role="tabpanel"
+            id="auth-panel-register"
+            aria-labelledby="auth-tab-register"
+            tabIndex={0}
+          >
+            <Form onSubmit={handleRegister} noValidate>
             <Form.Group className="mb-3" controlId="auth-register-name">
               <Form.Label>Họ tên</Form.Label>
               <Form.Control
@@ -227,12 +275,17 @@ export function AuthModal({ show, onClose }: AuthModalProps) {
               }
             />
 
-            {authError && <p className="auth-modal__error">{authError}</p>}
+            {authError && (
+              <p className="auth-modal__error" role="alert">
+                {authError}
+              </p>
+            )}
 
             <Button type="submit" variant="dark" className="w-100">
               Tạo tài khoản
             </Button>
-          </Form>
+            </Form>
+          </div>
         )}
           </>
         )}

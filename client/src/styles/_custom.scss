@@ -1295,3 +1295,72 @@ a:hover {
   --bs-btn-disabled-bg: var(--n24-accent);
   --bs-btn-disabled-border-color: var(--n24-accent);
 }
+
+// --- gợi ý tìm kiếm trên navbar ---------------------------------------------
+.app-navbar__search {
+  position: relative;
+}
+
+.app-navbar__suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  margin: 0;
+  padding: var(--n24-space-1) 0;
+  list-style: none;
+  background: var(--n24-surface);
+  border: 1px solid var(--n24-border);
+  border-radius: var(--n24-radius-control);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.app-navbar__suggestions a {
+  display: block;
+  padding: var(--n24-space-2) var(--n24-space-3);
+  color: var(--n24-text);
+  font-size: var(--n24-fs-meta);
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.app-navbar__suggestions a:hover,
+.app-navbar__suggestions a:focus-visible {
+  background: var(--n24-raised);
+  color: var(--n24-text);
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--n24-space-3);
+  left: var(--n24-space-3);
+  z-index: 1100;
+  padding: var(--n24-space-2) var(--n24-space-4);
+  background: var(--n24-surface);
+  color: var(--n24-text);
+  border: 1px solid var(--n24-accent);
+  border-radius: var(--n24-radius-control);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--n24-motion-fast) var(--n24-motion-ease);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  color: var(--n24-text);
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}
