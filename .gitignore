@@ -54,5 +54,8 @@ docs/README-ban-12-muc.md
 # Mô tả kiến trúc nội bộ - chỉ lưu local, KHÔNG lên GitHub
 project-context.md
 
+# Báo cáo phân tích lịch sử commit - chỉ lưu local, KHÔNG lên GitHub
+docs/BAO-CAO-PHAN-TICH-LICH-SU.md
+
 # Thư mục tạm khi verify / simulate
 .tmp-*/
